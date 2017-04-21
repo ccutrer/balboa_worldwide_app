@@ -1,33 +1,8 @@
 require 'socket'
-require 'balboa_worldwide_app/message'
+require 'bwa/message'
 
-module BalboaWorldwideApp
+module BWA
   class Client
-    class << self
-      def discover(timeout = 5, exhaustive = false)
-        socket = UDPSocket.new
-        socket.bind("0.0.0.0", 0)
-        socket.setsockopt(Socket::SOL_SOCKET, Socket::SO_BROADCAST, true)
-        socket.sendmsg("Discovery: Who is out there?", 0, Socket.sockaddr_in(30303, '255.255.255.255'))
-        spas = {}
-        loop do
-          if IO.select([socket], nil, nil, timeout)
-            msg, ip = socket.recvfrom(64)
-            ip = ip[2]
-            name, mac = msg.split("\r\n")
-            name.strip!
-            if mac.start_with?("00-15-27-")
-              spas[ip] = name
-              break unless exhaustive
-            end
-          else
-            break
-          end
-        end
-        spas
-      end
-    end
-
     attr_reader :last_status, :last_filter_configuration
 
     def initialize(host, port = 4257)
@@ -42,9 +17,9 @@ module BalboaWorldwideApp
       data_length = @leftover_data[1].ord
       data = @leftover_data[0...(data_length + 2)]
       @leftover_data = @leftover_data[(data_length + 2)..-1] || ''
-      message = Message.from_data(data)
-      @last_status = message.dup if message.is_a?(Message::Status)
-      @last_filter_configuration = message.dup if message.is_a?(Message::FilterCycles)
+      message = Message.parse(data)
+      @last_status = message.dup if message.is_a?(Messages::Status)
+      @last_filter_configuration = message.dup if message.is_a?(Messages::FilterCycles)
       message
     end
 
@@ -65,6 +40,10 @@ module BalboaWorldwideApp
 
     def request_configuration
       send_message("\x0a\xbf\x04")
+    end
+
+    def request_control_info
+      send_message("\x0a\xbf\x22\x02\x00\x00")
     end
 
     def request_filter_configuration

@@ -1,6 +1,6 @@
 require 'digest/crc'
 
-module BalboaWorldwideApp
+module BWA
   class CRC < Digest::CRC8
     INIT_CRC = 0x02
     XOR_MASK = 0x02

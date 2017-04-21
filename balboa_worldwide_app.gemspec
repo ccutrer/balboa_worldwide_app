@@ -1,12 +1,12 @@
-require_relative "lib/balboa_worldwide_app/version"
+require_relative "lib/bwa/version"
 
 Gem::Specification.new do |s|
   s.name = 'balboa_worldwide_app'
-  s.version = BalboaWorldwideApp::VERSION
+  s.version = BWA::VERSION
   s.platform = Gem::Platform::RUBY
   s.authors = ["Cody Cutrer"]
   s.email = "cody@cutrer.com'"
-  s.homepage = "https://github.com/ccutrer/balboa_worldwide_app"
+  s.homepage = "https://github.com/ccutrer/bwa"
   s.summary = "Library for communication with Balboa Water Group's WiFi module"
   s.license = "MIT"
 

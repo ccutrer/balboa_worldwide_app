@@ -1,0 +1,14 @@
+#!/usr/bin/env ruby
+
+require 'bwa/discovery'
+require 'bwa/proxy'
+
+Thread.new do
+  BWA::Discovery.advertise
+end
+
+proxy = BWA::Proxy.new(ARGV[0])
+
+loop do
+  proxy.run
+end

@@ -24,8 +24,8 @@ Sent in response to a configuration request.
 Message type 0a bf 94
 
 ```
- 1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24
-02 02 80 00 15 27 10 ab d2 00 00 00 00 00 00 00 00 00 15 27 ff 10 ab d2
+ 1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25
+02 02 80 00 15 27 10 ab d2 00 00 00 00 00 00 00 00 00 15 27 ff ff 10 ab d2
 ```
 
 ### Status Update
@@ -75,6 +75,27 @@ Message type: 0a bf 23
 * 2D: Filter 2 duration hours
 * 2E: Filter 2 duration minutes
 
+### Control Configuration
+In response to a control configuration request type 1.
+
+Message type: 0a bf 24
+
+```
+ 0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20
+64 dc 11 00 42 46 42 50 32 30 20 20 01 3d 12 38 2e 01 0a 04 00
+```
+
+### Control Configuration 2
+Sent when the app goes to the Controls screen
+
+Message type 0a bf 2e
+
+```
+ 1  2  3  4  5  6
+0a 00 01 d0 00 44
+```
+
+
 ## Outgoing Messages
 
 ### Configuration Request
@@ -94,7 +115,7 @@ Message type: 0a bf 22
 01 00 00
 ```
 
-### Control Request
+### Toggle Item
 
 Message type 0a bf 11
 
@@ -104,9 +125,11 @@ II 00
 ```
 
  * II - item:
-   * 11 - light 1
-   * 04 - pump 1
-   * 05 - pump 2
+   * 0x04 - pump 1
+   * 0x05 - pump 2
+   * 0x11 - light 1
+   * 0x51 - heating mode
+   * 0x50 - temperature range
   
 ### Set Temperature
 
@@ -121,6 +144,19 @@ TT
 
 range is 80-104 for F, 26-40 for C in high range
 range is 50-80 for F, 10-26 for C in low range
+
+### Set Temperature Scale
+
+Message type 0a bf 27
+
+```
+ 1  2
+01 TS
+```
+
+ * TS - Temperature Scale
+   * 0x00 - Fahrenheit
+   * 0x01 - Celsius
 
 ### Set Time
 
@@ -140,8 +176,27 @@ Message type 0a bf 92
 
 ```
  1  2 ...                             36 37 ....
-01 SL <32 bytes of SSID; null padded> 08 PL <64 bytes of the passkey; null padded>
+CT SL <32 bytes of SSID; null padded> ET PL <64 bytes of the passkey; null padded>
 ```
 
+ * CT - Configuration Type
+   * 0x01 - Open, WEP, or WPA
+   * 0x02 - WPS
+ * ET - Encryption Type
+   * 0x00 - Open or WPS
+   * 0x02 - WEP
+   * 0x08 - WPA
  * SL - SSID length
  * PL - passkey length
+
+### Control Configuration Request
+Sent when the app goes to the Controls screen. First it sends it with arguments
+of 02 00 00, then it gets a response, and then sends it again with arguments of
+00 00 01.
+
+Message type 0a bf 22
+
+```
+ 1  2  3
+02 00 00
+```

@@ -1,0 +1,14 @@
+#!/usr/bin/env ruby
+
+require 'bwa/discovery'
+require 'bwa/server'
+
+Thread.new do
+  BWA::Discovery.advertise
+end
+
+server = BWA::Server.new
+
+loop do
+  server.run
+end

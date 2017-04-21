@@ -1,0 +1,42 @@
+#!/usr/bin/env ruby
+
+require 'bwa/client'
+require 'bwa/discovery'
+
+def watch(spa)
+  loop do
+    begin
+      message = spa.poll
+      puts message.raw_data.unpack("H*").first.scan(/[0-9a-f]{2}/).join(' ')
+      puts message.inspect
+      if block_given?
+        break if yield
+      end
+    rescue BWA::InvalidMessage => e
+      puts e.message
+      puts e.raw_data.unpack("H*").first.scan(/[0-9a-f]{2}/).join(' ')
+      break
+    end
+  end
+end
+
+if ARGV.empty?
+  spas = BWA::Discovery.discover
+  if spas.empty?
+    $stderr.puts "Could not find spa!"
+    exit 1
+  end
+  spa_ip = spas.first.first
+else
+  spa_ip = ARGV[0]
+end
+
+spa = BWA::Client.new(spa_ip)
+
+spa.request_configuration
+watch(spa) do
+  spa.last_status
+end
+spa.request_control_info
+
+watch(spa)

@@ -1,1 +1,1 @@
-require 'balboa_worldwide_app/client'
+require 'bwa/client'
