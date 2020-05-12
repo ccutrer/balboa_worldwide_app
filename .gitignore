@@ -1,3 +1,4 @@
 /.byebug_history
 /balboa_worldwide_app-*.gem
 /Gemfile.lock
+/pkg/
