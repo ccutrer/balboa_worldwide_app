@@ -4,6 +4,8 @@ For discovery, send a UDP broadcast to port 30303. The spa (and possibly other d
 
 The Spa listens on port 4257. Once you connect via TCP, it immediately starts sending you status updates, about once per second.
 
+When using RS-485, it's 115200,8,N,1.
+
 A message (either status update, or command) looks like:
 
 ```
@@ -17,6 +19,11 @@ MS ML MT MT MT ... CB ME
 * CB: Check Byte (CRC-8 with 0x02 initial value, and 0x02 final XOR)
 
 ## Incoming Messages
+
+### Ready
+Sent on RS-485 only, when commands can be sent. Because RS-485 is a shared bus, you can't just send messages whenever you want, or they'll clobber each other. This message indicates it's save to _immediately_ send a message onto the bus.
+
+Message type 10 bf 06
 
 ### Configuration Response
 Sent in response to a configuration request.
