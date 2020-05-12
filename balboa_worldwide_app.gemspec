@@ -10,7 +10,7 @@ Gem::Specification.new do |s|
   s.summary = "Library for communication with Balboa Water Group's WiFi module or RS-485"
   s.license = "MIT"
 
-  s.executables = ['bwa']
+  s.executables = ['bwa_mqtt_bridge']
   s.files = Dir["{bin,lib}/**/*"]
 
   s.add_dependency 'digest-crc', "~> 0.4"
@@ -18,4 +18,5 @@ Gem::Specification.new do |s|
   s.add_dependency 'mqtt', "~> 0.5.0"
 
   s.add_development_dependency 'byebug', "~> 9.0"
+  s.add_development_dependency 'rake', "~> 13.0"
 end
