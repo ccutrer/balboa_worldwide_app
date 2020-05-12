@@ -8,6 +8,15 @@ As you can see in my case, the two black wires ended up being RS-485. The surefi
 
 ![Pinout](doc/header.jpg)
 
+## Related Projects
+
+These projects are all in various states, and may be more or less developed than this one in varying aspects.
+
+ * https://github.com/rsrawley/spaControl - Node.js server with socket.io API and other customizations
+ * https://github.com/garbled1/pybalboa/ - Python library
+ * https://github.com/plmilord/Hass.io-custom-component-spaclient = Hass.io integration
+ * https://github.com/MHotchin/BalboaSpaComms - C++/Windows
+
 ## Thanks
 
  * @garbled1 for figuring out the checksums
