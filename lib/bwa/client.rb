@@ -1,4 +1,3 @@
-require 'socket'
 require 'bwa/message'
 
 module BWA
@@ -6,25 +5,38 @@ module BWA
     attr_reader :last_status, :last_filter_configuration
 
     def initialize(host, port = 4257)
-      @socket = TCPSocket.new(host, port)
-      @leftover_data = "".force_encoding(Encoding::ASCII_8BIT)
+      if host =~ %r{^/dev}
+        require 'serialport'
+        @io = SerialPort.open(host, "baud" => 115200)
+        @queue = []
+      else
+        require 'socket'
+        @io = TCPSocket.new(host, port)
+      end
     end
 
     def poll
-      if @leftover_data.length < 2 || @leftover_data.length < @leftover_data[1].ord + 2
-        @leftover_data += @socket.recv(128)
+      message = nil
+      while message.nil?
+        begin
+          message = Message.parse(@io)
+          if message.is_a?(Messages::Ready) && (msg = @queue.shift)
+            @io.write(msg)
+          end
+        rescue BWA::InvalidMessage => e
+          unless e.message =~ /Incorrect data length/
+            puts e.message
+            puts e.raw_data.unpack("H*").first.scan(/[0-9a-f]{2}/).join(' ')
+          end
+        end
       end
-      data_length = @leftover_data[1].ord
-      data = @leftover_data[0...(data_length + 2)]
-      @leftover_data = @leftover_data[(data_length + 2)..-1] || ''
-      message = Message.parse(data)
       @last_status = message.dup if message.is_a?(Messages::Status)
       @last_filter_configuration = message.dup if message.is_a?(Messages::FilterCycles)
       message
     end
 
     def messages_pending?
-      !!IO.select([@socket], nil, nil, 0)
+      !!IO.select([@io], nil, nil, 0)
     end
 
     def drain_message_queue
@@ -35,7 +47,12 @@ module BWA
       length = message.length + 2
       full_message = "#{length.chr}#{message}".force_encoding(Encoding::ASCII_8BIT)
       checksum = CRC.checksum(full_message)
-      @socket.send("\x7e#{full_message}#{checksum.chr}\x7e".force_encoding(Encoding::ASCII_8BIT), 0)
+      full_message = "\x7e#{full_message}#{checksum.chr}\x7e".force_encoding(Encoding::ASCII_8BIT)
+      if @queue
+        @queue.push(full_message)
+      else
+        @io.write(full_message)
+      end
     end
 
     def request_configuration
@@ -50,8 +67,8 @@ module BWA
       send_message("\x0a\xbf\x22\x01\x00\x00")
     end
 
-    def toggle_item(args, checksum = nil)
-      send_message("\x0a\xbf\x11#{args}", checksum)
+    def toggle_item(args)
+      send_message("\x0a\xbf\x11#{args}")
     end
 
     def toggle_light1
@@ -94,7 +111,7 @@ module BWA
 
     def set_time(hour, minute, twenty_four_hour_time = false)
       hour |= 0x80 if twenty_four_hour_time
-      send_message("\x0a\xbf\x21#{hour.chr}#{minute.chr}")
+      send_message("\x0a\xbf\x21".force_encoding(Encoding::ASCII_8BIT) + hour.chr + minute.chr)
     end
   end
 end

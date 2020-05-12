@@ -1,0 +1,188 @@
+#!/usr/bin/env ruby
+
+require 'mqtt'
+
+require 'bwa/client'
+require 'bwa/discovery'
+
+class MQTTBridge
+  def initialize(mqtt_uri, bwa, device_id: "bwa", base_topic: "homie")
+    @base_topic = "#{base_topic}/#{device_id}"
+    @mqtt = MQTT::Client.new(mqtt_uri)
+    @mqtt.set_will("#{@base_topic}/$state", "lost", true)
+    @mqtt.connect
+    @bwa = bwa
+    @attributes = {}
+
+    publish_basic_attributes
+
+    bwa_thread = Thread.new do
+      loop do
+        begin
+          message = @bwa.poll
+          next if message.is_a?(BWA::Messages::Ready)
+
+          case message
+          when BWA::Messages::Status
+            # make sure time is in sync
+            now = Time.now
+            if message.hour != now.hour || message.minute != now.min
+              @bwa.set_time(now.hour, now.min, message.twenty_four_hour_time)
+            end
+            publish_attribute("spa/priming", message.priming)
+            publish_attribute("spa/heatingmode", message.heating_mode)
+            publish_attribute("spa/temperaturescale", message.temperature_scale)
+            publish_attribute("spa/24htime", message.twenty_four_hour_time)
+            publish_attribute("spa/heating", message.heating)
+            publish_attribute("spa/temperaturerange", message.temperature_range)
+            publish_attribute("spa/circpump", message.circ_pump)
+            publish_attribute("spa/pump1", message.pump1)
+            publish_attribute("spa/pump2", message.pump2)
+            publish_attribute("spa/light1", message.light1)
+            publish_attribute("spa/currenttemperature", message.current_temperature)
+            publish_attribute("spa/currenttemperature/$unit", "º#{message.temperature_scale.to_s[0].upcase}")
+            publish_attribute("spa/settemperature", message.set_temperature)
+            publish_attribute("spa/settemperature/$unit", "º#{message.temperature_scale.to_s[0].upcase}")
+            if message.temperature_scale == :celsius
+              publish_attribute("spa/currenttemperature/$format", message.temperature_range == :high ? "26:40" : "10:26")
+              publish_attribute("spa/settemperature/$format", message.temperature_range == :high ? "26:40" : "10:26")
+            else
+              publish_attribute("spa/currenttemperature/$format", message.temperature_range == :high ? "80:104" : "26:40")
+              publish_attribute("spa/settemperature/$format", message.temperature_range == :high ? "80:104" : "26:40")
+            end
+          end
+        end
+      end
+    end
+
+    @mqtt.get do |topic, value|
+      puts "got #{value.inspect} at #{topic}"
+      case topic[@base_topic.length + 1..-1]
+      when "heatingmode"
+        next unless %w{ready rest ready_in_rest}.include?(value)
+        # @bwa.set_heating_mode(value.to_sym)
+      when "temperaturescale"
+        next unless %w{fahrenheit celsius}.include?(value)
+        # @bwa.set_temperature_scale(value.to_sym)
+      when "spa/24htime/set"
+        next unless %w{true false}.include?(value)
+        now = Time.now
+        @bwa.set_time(now.hour, now.min, value == 'true')
+      when "temperaturerange"
+        next unless %w{low high}.include?(value)
+        # @bwa.set_temperature_range(value.to_sym)
+      when %r{^spa/(pump[12])/set}
+        @bwa.send(:"set_#{$1}", value.to_i)
+      when "spa/light1/set"
+        next unless %w{true false}.include?(value)
+        @bwa.set_light1(value == 'true')
+      when "spa/settemperature/set"
+        @bwa.set_temperature(value.to_i)
+      end
+    end
+  end
+
+  def publish(topic, value)
+    @mqtt.publish("#{@base_topic}/#{topic}", value, true)
+  end
+
+  def publish_attribute(attr, value)
+    if !@attributes.key?(attr) || @attributes[attr] != value
+      publish(attr, value.to_s)
+      @attributes[attr] = value
+    end
+  end
+
+  def subscribe(topic)
+    @mqtt.subscribe("#{@base_topic}/#{topic}")
+  end
+
+  def publish_basic_attributes
+    publish("$homie", "v4.0.0")
+    publish("$name", "BWA Spa")
+    publish("$state", "init")
+    publish("$nodes", "spa")
+
+    publish("spa/$name", "BWA Spa")
+    publish("spa/$type", "spa")
+    publish("spa/$properties", "priming,heatingmode,temperaturescale,24htime,heating,temperaturerange,circpump,pump1,pump2,light1,currenttemperature,settemperature")
+
+    publish("spa/priming/$name", "Is the pump priming")
+    publish("spa/priming/$datatype", "boolean")
+
+    publish("spa/heatingmode/$name", "Current heating mode")
+    publish("spa/heatingmode/$datatype", "enum")
+    publish("spa/heatingmode/$format", "ready,rest,ready_in_rest")
+    publish("spa/heatingmode/$settable", "true")
+    subscribe("spa/heatingmode/set")
+
+    publish("spa/temperaturescale/$name", "Temperature scale")
+    publish("spa/temperaturescale/$datatype", "enum")
+    publish("spa/temperaturescale/$format", "fahrenheit,celsius")
+    publish("spa/temperaturescale/$settable", "true")
+    subscribe("spa/temperaturescale/set")
+
+    publish("spa/24htime/$name", "Clock is 24 hour time")
+    publish("spa/24htime/$datatype", "boolean")
+    publish("spa/24htime/$settable", "true")
+    subscribe("spa/24htime/set")
+
+    publish("spa/heating/$name", "Heater is currently running")
+    publish("spa/heating/$datatype", "boolean")
+
+    publish("spa/temperaturerange/$name", "Current temperature range")
+    publish("spa/temperaturerange/$datatype", "enum")
+    publish("spa/temperaturerange/$format", "high,low")
+    publish("spa/temperaturerange/$settable", "true")
+    subscribe("spa/temperaturerange/set")
+
+    publish("spa/circpump/$name", "Circ pump is currently running")
+    publish("spa/circpump/$datatype", "boolean")
+
+    publish("spa/pump1/$name", "Pump 1 speed")
+    publish("spa/pump1/$datatype", "integer")
+    publish("spa/pump1/$format", "0:2")
+    publish("spa/pump1/$settable", "true")
+    subscribe("spa/pump1/set")
+
+    publish("spa/pump2/$name", "Pump 2 speed")
+    publish("spa/pump2/$datatype", "integer")
+    publish("spa/pump2/$format", "0:2")
+    publish("spa/pump2/$settable", "true")
+    subscribe("spa/pump2/set")
+
+    publish("spa/light1/$name", "Light 1")
+    publish("spa/light1/$datatype", "boolean")
+    publish("spa/light1/$settable", "true")
+    subscribe("spa/light1/set")
+
+    publish("spa/currenttemperature/$name", "Current temperature")
+    publish("spa/currenttemperature/$datatype", "integer")
+
+    publish("spa/settemperature/$name", "Set Temperature")
+    publish("spa/settemperature/$datatype", "integer")
+    publish("spa/settemperature/$settable", "true")
+    subscribe("spa/settemperature/set")
+
+    publish("$state", "ready")
+  end
+end
+
+mqtt_uri = ARGV.shift
+
+if ARGV.empty?
+  spas = BWA::Discovery.discover
+  if spas.empty?
+    $stderr.puts "Could not find spa!"
+    exit 1
+  end
+  spa_ip = spas.first.first
+else
+  spa_ip = ARGV[0]
+end
+
+spa = BWA::Client.new(spa_ip)
+
+spa.request_configuration
+
+MQTTBridge.new(mqtt_uri, spa)
