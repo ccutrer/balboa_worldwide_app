@@ -7,7 +7,7 @@ Gem::Specification.new do |s|
   s.authors = ["Cody Cutrer"]
   s.email = "cody@cutrer.com'"
   s.homepage = "https://github.com/ccutrer/bwa"
-  s.summary = "Library for communication with Balboa Water Group's WiFi module"
+  s.summary = "Library for communication with Balboa Water Group's WiFi module or RS-485"
   s.license = "MIT"
 
   s.executables = ['bwa']
