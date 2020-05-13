@@ -20,7 +20,7 @@ Ruby installed):
 
 ```sh
 gem install balboa_worldwide_app
-sudo curl https://github.com/ccutrer/balboa_worldwide_app/raw/master/contrib/bwa_mqtt_bridge.service > /etc/systemd/system
+sudo curl https://github.com/ccutrer/balboa_worldwide_app/raw/master/contrib/bwa_mqtt_bridge.service -L -o /etc/systemd/system/bwa_mqtt_bridge.service
 <modify the file to pass the correct URI to your MQTT server, and path to RS-485 device or hostname/IP for WiFi>
 sudo systemctl enable bwa_mqtt_bridge
 sudo systmctl start bwa_mqtt_bridge
