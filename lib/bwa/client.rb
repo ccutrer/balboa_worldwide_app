@@ -114,5 +114,11 @@ module BWA
       hour |= 0x80 if twenty_four_hour_time
       send_message("\x0a\xbf\x21".force_encoding(Encoding::ASCII_8BIT) + hour.chr + minute.chr)
     end
+
+    def set_temperature_scale(scale)
+      raise ArgumentError, "scale must be :fahrenheit or :celsius" unless [:fahrenheit, :celsius].include?(scale)
+      arg = scale == :fahrenheit ? 0 : 1
+      send_message("\x0a\xbf\x27\x01".force_encoding(Encoding::ASCII_8BIT) + arg.chr)
+    end
   end
 end

@@ -22,6 +22,7 @@ class MQTTBridge
           message = @bwa.poll
           next if message.is_a?(BWA::Messages::Ready)
 
+          puts message.inspect unless message.is_a?(BWA::Messages::Status)
           case message
           when BWA::Messages::Status
             # make sure time is in sync
@@ -58,17 +59,17 @@ class MQTTBridge
     @mqtt.get do |topic, value|
       puts "got #{value.inspect} at #{topic}"
       case topic[@base_topic.length + 1..-1]
-      when "heatingmode"
+      when "spa/heatingmode/set"
         next unless %w{ready rest ready_in_rest}.include?(value)
         # @bwa.set_heating_mode(value.to_sym)
-      when "temperaturescale"
+      when "spa/temperaturescale/set"
         next unless %w{fahrenheit celsius}.include?(value)
-        # @bwa.set_temperature_scale(value.to_sym)
+        @bwa.set_temperature_scale(value.to_sym)
       when "spa/24htime/set"
         next unless %w{true false}.include?(value)
         now = Time.now
         @bwa.set_time(now.hour, now.min, value == 'true')
-      when "temperaturerange"
+      when "spa/temperaturerange/set"
         next unless %w{low high}.include?(value)
         # @bwa.set_temperature_range(value.to_sym)
       when %r{^spa/(pump[12])/set}
