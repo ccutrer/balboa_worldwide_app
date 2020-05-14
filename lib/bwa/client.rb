@@ -116,15 +116,39 @@ module BWA
     end
 
     def set_temperature_scale(scale)
-      raise ArgumentError, "scale must be :fahrenheit or :celsius" unless [:fahrenheit, :celsius].include?(scale)
+      raise ArgumentError, "scale must be :fahrenheit or :celsius" unless %I{fahrenheit :celsius}.include?(scale)
       arg = scale == :fahrenheit ? 0 : 1
       send_message("\x0a\xbf\x27\x01".force_encoding(Encoding::ASCII_8BIT) + arg.chr)
+    end
+
+    def toggle_temperature_range
+      toggle_item("\x50\x00")
     end
 
     def set_temperature_range(desired)
       return unless last_status
       return if last_status.temperature_range == desired
-      toggle_item("\x50\x00")
+      toggle_temperature_range
+    end
+
+    def toggle_heating_mode
+      toggle_item("\x51\x00")
+    end
+
+    HEATING_MODES = %I{ready rest ready_in_rest}.freeze
+    def set_heating_mode(desired)
+      raise ArgumentError, "heating_mode must be :ready or :rest" unless %I{ready rest}.include?(desired)
+      return unless last_status
+      times = if last_status.heating_mode == :ready && desired == :rest ||
+                 last_status.heating_mode == :rest && desired == :ready ||
+                 last_status.heating_mode == :ready_in_rest && desired == :rest
+          1
+        elsif last_status.heating_mode == :ready_in_rest && desired == :ready
+          2
+        else
+          0
+        end
+      times.times { toggle_heating_mode }
     end
   end
 end

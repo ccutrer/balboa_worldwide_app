@@ -26,6 +26,15 @@ sudo systemctl enable bwa_mqtt_bridge
 sudo systmctl start bwa_mqtt_bridge
 ```
 
+Several properties also accept the non-Homie conforming value of `toggle` to
+indicate to cycle through available values, instead of going to a specifc
+value. These properties are:
+
+ * heatingmode
+ * heatingrange
+ * pump*
+ * light*
+
 ## OpenHAB
 If you're going to integrate with OpenHAB, you'll need to install the
 `MQTT Binding` in `Add-ons`. Then go to Inbox, click `+`, select `MQTT Binding`
