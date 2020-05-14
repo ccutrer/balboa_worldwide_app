@@ -20,7 +20,8 @@ module BWA
       while message.nil?
         begin
           message = Message.parse(@io)
-          if message.is_a?(Messages::Ready) && (msg = @queue.shift)
+          if message.is_a?(Messages::Ready) && (msg = @queue&.shift)
+            puts "wrote #{msg.unpack('H*').first}"
             @io.write(msg)
           end
         rescue BWA::InvalidMessage => e
