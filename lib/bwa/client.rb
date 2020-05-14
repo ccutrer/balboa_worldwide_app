@@ -120,5 +120,11 @@ module BWA
       arg = scale == :fahrenheit ? 0 : 1
       send_message("\x0a\xbf\x27\x01".force_encoding(Encoding::ASCII_8BIT) + arg.chr)
     end
+
+    def set_temperature_range(desired)
+      return unless last_status
+      return if last_status.temperature_range == desired
+      toggle_item("\x50\x00")
+    end
   end
 end

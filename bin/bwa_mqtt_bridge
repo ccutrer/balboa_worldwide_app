@@ -71,7 +71,7 @@ class MQTTBridge
         @bwa.set_time(now.hour, now.min, value == 'true')
       when "spa/temperaturerange/set"
         next unless %w{low high}.include?(value)
-        # @bwa.set_temperature_range(value.to_sym)
+        @bwa.set_temperature_range(value.to_sym)
       when %r{^spa/(pump[12])/set}
         @bwa.send(:"set_#{$1}", value.to_i)
       when "spa/light1/set"
