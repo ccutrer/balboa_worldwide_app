@@ -107,6 +107,9 @@ As you can see in my case, the two black wires ended up being RS-485. The surefi
 
 ![Pinout](doc/header.jpg)
 
+RFC2217 serial ports are also supported, if you want to run thie bridge on a different server than is directly connected to the spa. You can use `ser2net` to create such a serial port like `ser2net -C "2217:telnet:0:/dev/ttyHotTub:remctl" -d`, and then just specify the address as `rfc2217://hostname:2217/`. `socat` _cannot_ be used, because we need to
+properly configure the serial port, and know that it is a serial port and not the BWA WiFi bridge, since the protocol is slightly different.
+
 ## Related Projects
 
 These projects are all in various states, and may be more or less developed than this one in varying aspects.

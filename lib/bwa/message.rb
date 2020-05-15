@@ -17,48 +17,36 @@ module BWA
         @messages << klass
       end
 
-      def parse(io)
-        io = StringIO.new(io) if io.is_a?(String)
-        data = ''
-        # skim through until a start-of-message indicator
-        until data[0] == '~'
-          data = io.read(1)
+      def parse(data)
+        offset = -1
+        message_type = length = message_class = nil
+        loop do
+          offset += 1
+          return nil if data.length - offset < 5
+
+          next unless data[offset] == '~'
+          length = data[offset + 1].ord
+          # impossible message
+          next if length < 5
+
+          # don't have enough data for what this message wants;
+          # it could be garbage on the line so keep scanning
+          next if length + 2 > data.length - offset
+
+          next unless data[offset + length + 1] == '~'
+
+          next unless CRC.checksum(data.slice(offset + 1, length - 1)) == data[offset + length].ord
+          break
         end
 
-        data.concat(io.read(1))
-        length = data[-1].ord
+        puts "discarding invalid data prior to message #{data[0...offset].unpack('H*').first}" unless offset == 0
+        #puts "read #{data.slice(offset, length + 2).unpack('H*').first}"
 
-        if length < 5
-          bytes = data.bytes
-          bytes.shift
-          bytes.reverse.each { |byte| io.ungetbyte(byte) }
-          raise InvalidMessage.new("Message has bogus length: #{length}", data)
-        end
-
-        data.concat(io.read(length))
-        if data.length != length + 2
-          data.bytes.reverse.each { |b| io.ungetbyte(b) }
-          raise InvalidMessage.new("Incorrect data length (received #{data.length - 2}, expected #{length})", data)
-        end
-
-        message_type = data[2..4]
+        message_type = data.slice(offset + 2, 3)
         klass = @messages.find { |k| k::MESSAGE_TYPE == message_type }
 
-        unless data[-1] == '~'
-          bytes = data.bytes
-          bytes.shift
-          bytes.reverse.each { |b| io.ungetbyte(b) }
-          raise InvalidMessage.new("Missing trailing message indicator", data)
-        end
 
-        unless CRC.checksum(data[1...-2]) == data[-2].ord
-          bytes = data.bytes
-          bytes.shift
-          bytes.reverse.each { |b| io.ungetbyte(b) }
-          raise InvalidMessage.new("Invalid checksum", data)
-        end
-
-        return nil if [
+        return [nil, offset + length + 2] if [
                       "\xfe\xbf\x00".force_encoding(Encoding::ASCII_8BIT),
                       "\x10\xbf\xe1".force_encoding(Encoding::ASCII_8BIT),
                       "\x10\xbf\x07".force_encoding(Encoding::ASCII_8BIT)].include?(message_type)
@@ -67,9 +55,9 @@ module BWA
         raise InvalidMessage.new("Unrecognized data length (#{length}) for message #{klass}", data) unless length - 5 == klass::MESSAGE_LENGTH
 
         message = klass.new
-        message.parse(data[5..-2])
-        message.instance_variable_set(:@raw_data, data)
-        message
+        message.parse(data.slice(offset + 5, length - 5))
+        message.instance_variable_set(:@raw_data, data.slice(offset, length + 2))
+        [message, offset + length + 2]
       end
 
       def format_time(hour, minute, twenty_four_hour_time = true)

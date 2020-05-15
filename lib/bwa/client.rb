@@ -4,32 +4,39 @@ module BWA
   class Client
     attr_reader :last_status, :last_filter_configuration
 
-    def initialize(host, port = 4257)
-      if host =~ %r{^/dev}
-        require 'serialport'
-        @io = SerialPort.open(host, "baud" => 115200)
+    def initialize(uri)
+      uri = URI.parse(uri)
+      if uri.scheme == 'tcp'
+        require 'socket'
+        @io = TCPSocket.new(uri.host, uri.port || 4217)
+      elsif uri.scheme == 'telnet' || uri.scheme == 'rfc2217'
+        require 'net/telnet/rfc2217'
+        @io = Net::Telnet::RFC2217.new("Host" => uri.host, "Port" => uri.port || 23, "baud" => 115200)
         @queue = []
       else
-        require 'socket'
-        @io = TCPSocket.new(host, port)
+        require 'serialport'
+        @io = SerialPort.open(uri.path, "baud" => 115200)
+        @queue = []
       end
+      @buffer = ""
     end
 
     def poll
-      message = nil
-      while message.nil?
-        begin
-          message = Message.parse(@io)
-          if message.is_a?(Messages::Ready) && (msg = @queue&.shift)
-            puts "wrote #{msg.unpack('H*').first}"
-            @io.write(msg)
-          end
-        rescue BWA::InvalidMessage => e
-          unless e.message =~ /Incorrect data length/
-            puts e.message
-            puts e.raw_data.unpack("H*").first.scan(/[0-9a-f]{2}/).join(' ')
-          end
+      message = bytes_read = nil
+      loop do
+        message, bytes_read = Message.parse(@buffer)
+       # discard how much we read
+       @buffer = @buffer[bytes_read..-1] if bytes_read
+        unless message
+          @buffer.concat(@io.readpartial(64 * 1024))
+          next
         end
+        break
+      end
+
+      if message.is_a?(Messages::Ready) && (msg = @queue&.shift)
+        puts "wrote #{msg.unpack('H*').first}"
+        @io.write(msg)
       end
       @last_status = message.dup if message.is_a?(Messages::Status)
       @last_filter_configuration = message.dup if message.is_a?(Messages::FilterCycles)
