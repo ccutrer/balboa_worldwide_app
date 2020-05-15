@@ -27,7 +27,13 @@ class MQTTBridge
           when BWA::Messages::Status
             # make sure time is in sync
             now = Time.now
-            if message.hour != now.hour || message.minute != now.min
+            now_minutes = now.hour * 60 + now.min
+            spa_minutes = message.hour * 60 + message.minute
+            # check the difference in both directions
+            diff = [(spa_minutes - now_minutes) % 1440, 1440 - (spa_minutes - now_minutes) % 1440].min
+
+            # allow a skew of 1 minute, since the seconds will always be off
+            if diff > 1
               @bwa.set_time(now.hour, now.min, message.twenty_four_hour_time)
             end
             publish_attribute("spa/priming", message.priming)
