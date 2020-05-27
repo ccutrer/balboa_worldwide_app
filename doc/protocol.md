@@ -134,6 +134,7 @@ II 00
  * II - item:
    * 0x04 - pump 1
    * 0x05 - pump 2
+   * 0x06 - pump 3
    * 0x11 - light 1
    * 0x51 - heating mode
    * 0x50 - temperature range
