@@ -21,7 +21,7 @@ MS ML MT MT MT ... CB ME
 ## Incoming Messages
 
 ### Ready
-Sent on RS-485 only, when commands can be sent. Because RS-485 is a shared bus, you can't just send messages whenever you want, or they'll clobber each other. This message indicates it's save to _immediately_ send a message onto the bus.
+Sent on RS-485 only, when commands can be sent. Because RS-485 is a shared bus, you can't just send messages whenever you want, or they'll clobber each other. This message indicates it's safe to _immediately_ send a message onto the bus.
 
 Message type 10 bf 06
 
@@ -57,7 +57,7 @@ Message Type: ff af 13
 * Flags 4:
   * 0x30 = Heating (seems it can be 0, 1, or 2)
   * 0x04 = Temperature Range (0 = Low, 1 = High)
-* PP: Pump status: 0x03 for pump 1, 0x12 for pump 2 (or, shift two bits off, and then mask to 0x03). Valid values for each are 0, 1 or 2.
+* PP: Pump status: 0x03 for pump 1, 0x0C for pump 2 (or, shift two bits right, and then mask to 0x03), 0x30 for pump 3 (or, shift 4 bits right, and then mask to 0x3). Valid values for each are 0, 1 or 2.
 * CP: Circ pump: 0x02 = on
 * LF: Light flag: 0x03 == 0x03 for on (I only have one light, and the app displays "Light 1", so I don't know why it's using two bits)
 * HH: Hour (always 0-24, even in 12 hour mode; flag is used to control display)
