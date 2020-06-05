@@ -10,18 +10,18 @@ A message (either status update, or command) looks like:
 
 ```
 01 02 03 04 05 ... -2 -1
-MS ML MT MT MT ... CB ME
+MS ML MT MT MT ... CS ME
 ```
 
 * MS, ME: Message Start/End (always 0x7e "~")
 * MT: Message Type
 * ML: Message Length
-* CB: Check Byte (CRC-8 with 0x02 initial value, and 0x02 final XOR)
+* CS: Checksum (CRC-8 with 0x02 initial value, and 0x02 final XOR)
 
 ## Incoming Messages
 
 ### Ready
-Sent on RS-485 only, when commands can be sent. Because RS-485 is a shared bus, you can't just send messages whenever you want, or they'll clobber each other. This message indicates it's save to _immediately_ send a message onto the bus.
+Sent on RS-485 only, when commands can be sent. Because RS-485 is a shared bus, you can't just send messages whenever you want, or they'll clobber each other. This message indicates it's safe to _immediately_ send a message onto the bus.
 
 Message type 10 bf 06
 
@@ -40,7 +40,7 @@ This message is sent every second.
 
 ```
  0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23
-00 F1 CT HH MM F2 00 00 00 F3 F4 PP 00 CP LF 00 00 00 00 00 ST 00 00 00
+00 F1 CT HH MM F2 00 00 00 F3 F4 PP 00 F5 LF 00 00 00 00 00 ST 00 00 00
 ```
 
 Message Type: ff af 13
@@ -57,8 +57,10 @@ Message Type: ff af 13
 * Flags 4:
   * 0x30 = Heating (seems it can be 0, 1, or 2)
   * 0x04 = Temperature Range (0 = Low, 1 = High)
-* PP: Pump status: 0x03 for pump 1, 0x12 for pump 2 (or, shift two bits off, and then mask to 0x03). Valid values for each are 0, 1 or 2.
-* CP: Circ pump: 0x02 = on
+* Flags 5:
+  * 0x02 = Circulation pump
+  * 0x0C = Blower
+* PP: Pump status: 0x03 for pump 1, 0x0C for pump 2 (or, shift two bits right, and then mask to 0x03), 0x30 for pump 3 (or, shift 4 bits right, and then mask to 0x3). Valid values for each are 0, 1 or 2.
 * LF: Light flag: 0x03 == 0x03 for on (I only have one light, and the app displays "Light 1", so I don't know why it's using two bits)
 * HH: Hour (always 0-24, even in 12 hour mode; flag is used to control display)
 * MM: Minute
@@ -134,6 +136,8 @@ II 00
  * II - item:
    * 0x04 - pump 1
    * 0x05 - pump 2
+   * 0x06 - pump 3
+   * 0x0C - blower
    * 0x11 - light 1
    * 0x51 - heating mode
    * 0x50 - temperature range
