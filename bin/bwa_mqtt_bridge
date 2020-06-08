@@ -43,8 +43,10 @@ class MQTTBridge
             publish_attribute("spa/heating", message.heating)
             publish_attribute("spa/temperaturerange", message.temperature_range)
             publish_attribute("spa/circpump", message.circ_pump)
+            publish_attribute("spa/blower", message.blower)
             publish_attribute("spa/pump1", message.pump1)
             publish_attribute("spa/pump2", message.pump2)
+            publish_attribute("spa/pump2", message.pump3)
             publish_attribute("spa/light1", message.light1)
             publish_attribute("spa/currenttemperature", message.current_temperature)
             publish_attribute("spa/currenttemperature/$unit", "º#{message.temperature_scale.to_s[0].upcase}")
@@ -80,13 +82,13 @@ class MQTTBridge
         next @bwa.toggle_temperature_range if value == 'toggle'
         next unless %w{low high}.include?(value)
         @bwa.set_temperature_range(value.to_sym)
-      when %r{^spa/(pump[12])/set}
-      next @bwa.send(:"toggle_#{$1}") if value == 'toggle'
-      @bwa.send(:"set_#{$1}", value.to_i)
-      when "spa/light1/set"
-        next @bwa.toggle_light1 if value == 'toggle'
+      when %r{^spa/(pump[123])/set$}
+        next @bwa.send(:"toggle_#{$1}") if value == 'toggle'
+        @bwa.send(:"set_#{$1}", value.to_i)
+      when %r{^spa/(light1|blower)/set$}
+        next @bwa.send(:"toggle_#{$1}") if value == 'toggle'
         next unless %w{true false}.include?(value)
-        @bwa.set_light1(value == 'true')
+        @bwa.send(:"set_#{$1}", value == 'true')
       when "spa/settemperature/set"
         @bwa.set_temperature(value.to_i)
       end
@@ -116,7 +118,7 @@ class MQTTBridge
 
     publish("spa/$name", "BWA Spa")
     publish("spa/$type", "spa")
-    publish("spa/$properties", "priming,heatingmode,temperaturescale,24htime,heating,temperaturerange,circpump,pump1,pump2,light1,currenttemperature,settemperature")
+    publish("spa/$properties", "priming,heatingmode,temperaturescale,24htime,heating,temperaturerange,circpump,blower,pump1,pump2,pump3,light1,currenttemperature,settemperature")
 
     publish("spa/priming/$name", "Is the pump priming")
     publish("spa/priming/$datatype", "boolean")
@@ -150,17 +152,18 @@ class MQTTBridge
     publish("spa/circpump/$name", "Circ pump is currently running")
     publish("spa/circpump/$datatype", "boolean")
 
-    publish("spa/pump1/$name", "Pump 1 speed")
-    publish("spa/pump1/$datatype", "integer")
-    publish("spa/pump1/$format", "0:2")
-    publish("spa/pump1/$settable", "true")
-    subscribe("spa/pump1/set")
+    publish("spa/blower/$name", "Blower")
+    publish("spa/blower/$datatype", "boolean")
+    publish("spa/blower/$settable", "true")
+    subscribe("spa/blower/set")
 
-    publish("spa/pump2/$name", "Pump 2 speed")
-    publish("spa/pump2/$datatype", "integer")
-    publish("spa/pump2/$format", "0:2")
-    publish("spa/pump2/$settable", "true")
-    subscribe("spa/pump2/set")
+    (1..3).each do |i|
+      publish("spa/pump#{i}/$name", "Pump #{i} speed")
+      publish("spa/pump#{i}/$datatype", "integer")
+      publish("spa/pump#{i}/$format", "0:2")
+      publish("spa/pump#{i}/$settable", "true")
+      subscribe("spa/pump#{i}/set")
+    end
 
     publish("spa/light1/$name", "Light 1")
     publish("spa/light1/$datatype", "boolean")

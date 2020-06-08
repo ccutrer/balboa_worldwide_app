@@ -9,7 +9,8 @@ module BWA
                     :temperature_range,
                     :hour, :minute,
                     :circ_pump,
-                    :pump1, :pump2,
+                    :blower,
+                    :pump1, :pump2, :pump3,
                     :light1,
                     :current_temperature, :set_temperature
 
@@ -47,9 +48,11 @@ module BWA
         self.temperature_range = (flags & 0x04 == 0x04) ? :high : :low
         flags = data[11].ord
         self.pump1 = flags & 0x03
-        self.pump2 = (flags / 4) & 0x03
+        self.pump2 = (flags >> 2) & 0x03
+        self.pump3 = (flags >> 4) & 0x03
         flags = data[13].ord
         self.circ_pump = (flags & 0x02 == 0x02)
+        self.blower = (flags & 0x0C == 0x0C)
         flags = data[14].ord
         self.light1 = (flags & 0x03 == 0x03)
         self.hour = data[3].ord
@@ -138,8 +141,10 @@ module BWA
         items << "heating" if heating
         items << temperature_range
         items << "circ_pump" if circ_pump
+        items << "blower" if blower
         items << "pump1=#{pump1}" unless pump1 == 0
         items << "pump2=#{pump2}" unless pump2 == 0
+        items << "pump3=#{pump3}" unless pump3 == 0
         items << "light1" if light1
 
         result << items.join(' ') << ">"

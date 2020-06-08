@@ -91,7 +91,15 @@ module BWA
       toggle_item("\x05\x00")
     end
 
-    (1..2).each do |i|
+    def toggle_pump3
+      toggle_item("\x06\x00")
+    end
+
+    def toggle_blower
+      toggle_item("\x0c\x00")
+    end
+
+    (1..3).each do |i|
       class_eval <<-RUBY, __FILE__, __LINE__ + 1
       def set_pump#{i}(desired)
         return unless last_status
@@ -104,10 +112,14 @@ module BWA
       RUBY
     end
 
-    def set_light1(desired)
-      return unless last_status
-      return if last_status.light1 == desired
-      toggle_light1
+    %w{light1 blower}.each do |i|
+      class_eval <<-RUBY, __FILE__, __LINE__ + 1
+      def set_#{i}(desired)
+        return unless last_status
+        return if last_status.#{i} == desired
+        toggle_#{i}
+      end
+      RUBY
     end
 
     # high range is 80-104 for F, 26-40 for C (by 0.5)
