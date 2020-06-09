@@ -13,6 +13,7 @@ class MQTTBridge
     @mqtt.connect
     @bwa = bwa
     @attributes = {}
+    @things = Set.new
 
     publish_basic_attributes
 
@@ -24,7 +25,26 @@ class MQTTBridge
 
           puts message.inspect unless message.is_a?(BWA::Messages::Status)
           case message
+          when BWA::Messages::ControlConfiguration
+            publish("spa/$type", message.model)
+          when BWA::Messages::ControlConfiguration2
+            message.pumps.each_with_index do |speed, i|
+              publish_pump(i + 1, speed) if speed != 0
+            end
+            message.lights.each_with_index do |exists, i|
+              publish_thing("light", i + 1) if exists
+            end
+            message.aux.each_with_index do |exists, i|
+              publish_thing("aux", i + 1) if exists
+            end
+            publish_mister if message.mister
+            publish_blower(message.blower) if message.blower != 0
+            publish_circpump if message.circ_pump
+            publish("$state", "ready")
           when BWA::Messages::Status
+            @bwa.request_control_info unless @bwa.last_control_configuration
+            @bwa.request_control_info2 unless @bwa.last_control_configuration2
+
             # make sure time is in sync
             now = Time.now
             now_minutes = now.hour * 60 + now.min
@@ -42,12 +62,6 @@ class MQTTBridge
             publish_attribute("spa/24htime", message.twenty_four_hour_time)
             publish_attribute("spa/heating", message.heating)
             publish_attribute("spa/temperaturerange", message.temperature_range)
-            publish_attribute("spa/circpump", message.circ_pump)
-            publish_attribute("spa/blower", message.blower)
-            publish_attribute("spa/pump1", message.pump1)
-            publish_attribute("spa/pump2", message.pump2)
-            publish_attribute("spa/pump2", message.pump3)
-            publish_attribute("spa/light1", message.light1)
             publish_attribute("spa/currenttemperature", message.current_temperature)
             publish_attribute("spa/currenttemperature/$unit", "º#{message.temperature_scale.to_s[0].upcase}")
             publish_attribute("spa/settemperature", message.set_temperature)
@@ -58,6 +72,21 @@ class MQTTBridge
             else
               publish_attribute("spa/currenttemperature/$format", message.temperature_range == :high ? "80:104" : "26:40")
               publish_attribute("spa/settemperature/$format", message.temperature_range == :high ? "80:104" : "26:40")
+            end
+            publish_attribute("spa/filter1", message.filter[0])
+            publish_attribute("spa/filter2", message.filter[1])
+
+            publish_attribute("spa/circpump", message.circ_pump) if @bwa.last_control_configuration2&.circ_pump
+            publish_attribute("spa/blower", message.blower) if @bwa.last_control_configuration2&.blower.to_i != 0
+            publish_attribute("spa/mister", message.mister) if @bwa.last_control_configuration2&.mister
+            (0..5).each do |i|
+              publish_attribute("spa/pump#{i + 1}", message.pumps[i]) if @bwa.last_control_configuration2&.pumps&.[](i).to_i != 0
+            end
+            (0..1).each do |i|
+              publish_attribute("spa/light#{i + 1}", message.lights[i]) if @bwa.last_control_configuration2&.lights&.[](i)
+            end
+            (0..1).each do |i|
+              publish_attribute("spa/aux#{i + 1}", message.lights[i]) if @bwa.last_control_configuration2&.aux&.[](i)
             end
           end
         end
@@ -82,13 +111,20 @@ class MQTTBridge
         next @bwa.toggle_temperature_range if value == 'toggle'
         next unless %w{low high}.include?(value)
         @bwa.set_temperature_range(value.to_sym)
-      when %r{^spa/(pump[123])/set$}
-        next @bwa.send(:"toggle_#{$1}") if value == 'toggle'
-        @bwa.send(:"set_#{$1}", value.to_i)
-      when %r{^spa/(light1|blower)/set$}
-        next @bwa.send(:"toggle_#{$1}") if value == 'toggle'
+      when %r{^spa/pump([1-6])/set$}
+        next @bwa.toggle_pump($1.to_i) if value == 'toggle'
+        @bwa.set_pump($1.to_i, value.to_i)
+      when %r{^spa/(light|aux)([12])/set$}
+        next @bwa.send(:"toggle_#{$1}", $2.to_i) if value == 'toggle'
         next unless %w{true false}.include?(value)
-        @bwa.send(:"set_#{$1}", value == 'true')
+        @bwa.send(:"set_#{$1}", $2.to_i, value == 'true')
+      when "spa/mister/set"
+        next @bwa.toggle_mister if value == 'toggle'
+        next unless %w{true false}.include?(value)
+        @bwa.set_mister(value == 'true')
+      when "spa/blower/set"
+        next @bwa.toggle_blower if value == 'toggle'
+        @bwa.set_blower(value.to_i)
       when "spa/settemperature/set"
         @bwa.set_temperature(value.to_i)
       end
@@ -118,7 +154,7 @@ class MQTTBridge
 
     publish("spa/$name", "BWA Spa")
     publish("spa/$type", "spa")
-    publish("spa/$properties", "priming,heatingmode,temperaturescale,24htime,heating,temperaturerange,circpump,blower,pump1,pump2,pump3,light1,currenttemperature,settemperature")
+    publish_nodes
 
     publish("spa/priming/$name", "Is the pump priming")
     publish("spa/priming/$datatype", "boolean")
@@ -149,27 +185,6 @@ class MQTTBridge
     publish("spa/temperaturerange/$settable", "true")
     subscribe("spa/temperaturerange/set")
 
-    publish("spa/circpump/$name", "Circ pump is currently running")
-    publish("spa/circpump/$datatype", "boolean")
-
-    publish("spa/blower/$name", "Blower")
-    publish("spa/blower/$datatype", "boolean")
-    publish("spa/blower/$settable", "true")
-    subscribe("spa/blower/set")
-
-    (1..3).each do |i|
-      publish("spa/pump#{i}/$name", "Pump #{i} speed")
-      publish("spa/pump#{i}/$datatype", "integer")
-      publish("spa/pump#{i}/$format", "0:2")
-      publish("spa/pump#{i}/$settable", "true")
-      subscribe("spa/pump#{i}/set")
-    end
-
-    publish("spa/light1/$name", "Light 1")
-    publish("spa/light1/$datatype", "boolean")
-    publish("spa/light1/$settable", "true")
-    subscribe("spa/light1/set")
-
     publish("spa/currenttemperature/$name", "Current temperature")
     publish("spa/currenttemperature/$datatype", "integer")
 
@@ -178,7 +193,65 @@ class MQTTBridge
     publish("spa/settemperature/$settable", "true")
     subscribe("spa/settemperature/set")
 
-    publish("$state", "ready")
+    publish("spa/filter1/$name", "Filter cycle 1 is currently running")
+    publish("spa/filter1/$datatype", "boolean")
+
+    publish("spa/filter2/$name", "Filter cycle 2 is currently running")
+    publish("spa/filter2/$datatype", "boolean")
+  end
+
+  def publish_pump(i, speeds)
+    publish("spa/pump#{i}/$name", "Pump #{i} speed")
+    publish("spa/pump#{i}/$datatype", "integer")
+    publish("spa/pump#{i}/$format", "0:#{speeds}")
+    publish("spa/pump#{i}/$settable", "true")
+    subscribe("spa/pump#{i}/set")
+
+    @things << "pump#{i}"
+    publish_nodes
+  end
+
+  def publish_thing(type, i)
+    publish("spa/#{type}#{i}/$name", "#{type} #{i}")
+    publish("spa/#{type}#{i}/$datatype", "boolean")
+    publish("spa/#{type}#{i}/$settable", "true")
+    subscribe("spa/#{type}#{i}/set")
+
+    @things << "#{type}#{i}"
+    publish_nodes
+  end
+
+  def publish_mister
+    publish("spa/mister/$name", type)
+    publish("spa/mister/$datatype", "boolean")
+    publish("spa/mister/$settable", "true")
+    subscribe("spa/mister/set")
+
+    @things << "mister"
+    publish_nodes
+  end
+
+  def publish_blower(speeds)
+    publish("spa/blower/$name", "Blower speed")
+    publish("spa/blower/$datatype", "integer")
+    publish("spa/blower/$format", "0:#{speeds}")
+    publish("spa/blower/$settable", "true")
+    subscribe("spa/blower/set")
+
+    @things << "blower"
+    publish_nodes
+  end
+
+  def publish_circpump
+    publish("spa/circpump/$name", "Circ pump is currently running")
+    publish("spa/circpump/$datatype", "boolean")
+    @things << "circpump"
+
+    publish_nodes
+  end
+
+  def publish_nodes
+    publish("spa/$properties", (["priming,heatingmode,temperaturescale,24htime,heating,temperaturerange,currenttemperature,settemperature,filter1,filter2"] + @things.to_a).join(','))
   end
 end
 

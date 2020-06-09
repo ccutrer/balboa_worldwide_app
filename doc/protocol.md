@@ -40,7 +40,7 @@ This message is sent every second.
 
 ```
  0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23
-00 F1 CT HH MM F2 00 00 00 F3 F4 PP 00 F5 LF 00 00 00 00 00 ST 00 00 00
+00 F1 CT HH MM F2 00 00 00 F3 F4 PP 00 F5 LF F6 00 00 00 00 ST 00 00 00
 ```
 
 Message Type: ff af 13
@@ -54,12 +54,15 @@ Message Type: ff af 13
 * Flags 3:
   * 0x01 = Temperature Scale (0 = Fahrenheit, 1 = Celsius)
   * 0x02 = 24 Hour Time (0 = 12 hour time, 1 = 24 hour time)
+  * 0x0c = Filter Mode
 * Flags 4:
   * 0x30 = Heating (seems it can be 0, 1, or 2)
   * 0x04 = Temperature Range (0 = Low, 1 = High)
 * Flags 5:
   * 0x02 = Circulation pump
   * 0x0C = Blower
+* Flags 6:
+  * 0x01 = Mister
 * PP: Pump status: 0x03 for pump 1, 0x0C for pump 2 (or, shift two bits right, and then mask to 0x03), 0x30 for pump 3 (or, shift 4 bits right, and then mask to 0x3). Valid values for each are 0, 1 or 2.
 * LF: Light flag: 0x03 == 0x03 for on (I only have one light, and the app displays "Light 1", so I don't know why it's using two bits)
 * HH: Hour (always 0-24, even in 12 hour mode; flag is used to control display)
@@ -90,8 +93,21 @@ In response to a control configuration request type 1.
 Message type: 0a bf 24
 
 ```
- 0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20
+ 0  1 V0 V1 M0 M1 M2 M3 M4 M5 M6 M7 12 13 14 15 16 17 18 19 20
 64 dc 11 00 42 46 42 50 32 30 20 20 01 3d 12 38 2e 01 0a 04 00
+```
+
+ * V0.V1: Sofware Version (ex 20.0)
+ * M0..M7: Model name in ASCII
+
+Other examples:
+
+```
+64dc 1100 4246425032302020 01 3d12382e 010a 0400
+64dc 1400 4250323030304731 04 51800c6b 010a 0200
+64c9 1300 4d51425035303120 01 0403daed 0106 0400
+64e1 2400 4d53343045202020 01 c3479636 030a 4400
+64e1 1400 4250323130304731 11 ebce9fd8 030a 1600
 ```
 
 ### Control Configuration 2
