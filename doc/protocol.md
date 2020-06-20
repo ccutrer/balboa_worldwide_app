@@ -9,7 +9,7 @@ When using RS-485, it's 115200,8,N,1.
 A message (either status update, or command) looks like:
 
 ```
-01 02 03 04 05 ... -2 -1
+ 0 1  2  3  4  ... -2 -1
 MS ML MT MT MT ... CS ME
 ```
 
@@ -31,7 +31,7 @@ Sent in response to a configuration request.
 Message type 0a bf 94
 
 ```
- 1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25
+ 0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24
 02 02 80 00 15 27 10 ab d2 00 00 00 00 00 00 00 00 00 15 27 ff ff 10 ab d2
 ```
 
@@ -102,7 +102,7 @@ Sent when the app goes to the Controls screen
 Message type 0a bf 2e
 
 ```
- 1  2  3  4  5  6
+ 0  1  2  3  4  5
 0a 00 01 d0 00 44
 ```
 
@@ -122,7 +122,7 @@ You must have previously sent general configuration request before sending this.
 Message type: 0a bf 22
 
 ```
- 1  2  3
+ 0  1  2
 01 00 00
 ```
 
@@ -131,7 +131,7 @@ Message type: 0a bf 22
 Message type 0a bf 11
 
 ```
- 1  2
+ 0  1
 II 00
 ```
 
@@ -150,7 +150,7 @@ II 00
 Message type 0a bf 20
 
 ```
- 1
+ 0
 TT
 ```
 
@@ -164,7 +164,7 @@ range is 50-80 for F, 10-26 for C in low range
 Message type 0a bf 27
 
 ```
- 1  2
+ 0  1
 01 TS
 ```
 
@@ -177,7 +177,7 @@ Message type 0a bf 27
 Message type 0a bf 21
 
 ```
- 1  2
+ 0  1
 HH MM
 ```
 
@@ -189,7 +189,7 @@ HH MM
 Message type 0a bf 92
 
 ```
- 1  2 ...                             36 37 ....
+ 0  1 ...                             35 36 ....
 CT SL <32 bytes of SSID; null padded> ET PL <64 bytes of the passkey; null padded>
 ```
 
@@ -211,6 +211,6 @@ of 02 00 00, then it gets a response, and then sends it again with arguments of
 Message type 0a bf 22
 
 ```
- 1  2  3
+ 0  1  2
 02 00 00
 ```
