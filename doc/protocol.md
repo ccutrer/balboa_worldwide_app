@@ -40,13 +40,15 @@ This message is sent every second.
 
 ```
  0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23
-00 F1 CT HH MM F2 00 00 00 F3 F4 PP 00 F5 LF 00 00 00 00 00 ST 00 00 00
+F0 F1 CT HH MM F2 00 00 00 F3 F4 PP 00 F5 LF 00 00 00 00 00 ST 00 00 00
 ```
 
 Message Type: ff af 13
 
 * CT: Current Temperature (divide by two if in Celsius; ff if unknown)
 * ST: Set Temperature (ditto)
+* Flags 0:
+  * 0x05 = Hold Mode
 * Flags 1:
   * 0x01 = Priming
 * Flags 2:
@@ -139,6 +141,7 @@ II 00
    * 0x06 - pump 3
    * 0x0C - blower
    * 0x11 - light 1
+   * 0x3C - hold mode
    * 0x51 - heating mode
    * 0x50 - temperature range
   
