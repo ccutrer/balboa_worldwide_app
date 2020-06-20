@@ -67,8 +67,8 @@ Message Type: ff af 13
 * HH: Hour (always 0-24, even in 12 hour mode; flag is used to control display)
 * MM: Minute
 
-### Filter Configuration
-This message is sent to all connected clients when any client sends a filter configuration request.
+### Filter Cycles Response
+This message is sent to all connected clients when any client sends a filter cycles request.
 
 Message type: 0a bf 23
 
@@ -86,15 +86,45 @@ Message type: 0a bf 23
 * 2D: Filter 2 duration hours
 * 2E: Filter 2 duration minutes
 
-### Control Configuration
+### Information Response
 In response to a control configuration request type 1.
 
 Message type: 0a bf 24
 
 ```
  0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20
+SI SI SV SV SM SM SM SM SM SM SM SM SU CS CS CS CS HT HT DS DS
 64 dc 11 00 42 46 42 50 32 30 20 20 01 3d 12 38 2e 01 0a 04 00
 ```
+
+* SI: Software ID (SSID). Ex.: "M100_220"
+* SV: Software ID (SSID) Version. Ex.: "V17"
+* SM: System Model, in ASCII. Ex.: "BFBP20  "
+* SU: Current Setup
+* CS: Configuration Signature. Ex.: "3D12382E"
+* HV: Heater Voltage:
+  * 0x01 = 240V
+* HT: Heater Type
+  * 0x0A = Standard
+* DS: DIP Switch Settings. Ex.: "1000000000"
+
+### Fault Code Response
+Message type 0a bf 28
+
+```
+ 0  1  2  3  4  5  6  7  8  9
+EN ?? MC DD HH MM FF ST TA TB
+```
+
+* EN: Entry Number
+* MC: Message Code
+* DD: Days Ago
+* HH: Time Hours
+* MM: Time Minutes
+* FF: Flags (Heating Mode, Temp. Range)
+* ST: Set Temperature
+* TA: Sensor A Temperature
+* TB: Sensor B Temperature
 
 ### Control Configuration 2
 Sent when the app goes to the Controls screen
@@ -203,14 +233,30 @@ CT SL <32 bytes of SSID; null padded> ET PL <64 bytes of the passkey; null padde
  * SL - SSID length
  * PL - passkey length
 
-### Control Configuration Request
+### Settings Request
 Sent when the app goes to the Controls screen. First it sends it with arguments
 of 02 00 00, then it gets a response, and then sends it again with arguments of
 00 00 01.
 
 Message type 0a bf 22
 
+#### Filter Cycles Request
+```
+ 0  1  2
+01 00 00
+```
+#### Information Request
 ```
  0  1  2
 02 00 00
+```
+#### Preferences Request
+```
+ 0  1  2
+08 00 00
+```
+#### Fault Code Request
+```
+ 0  1  2
+20 FF 00
 ```
