@@ -258,5 +258,6 @@ Message type 0a bf 22
 #### Fault Code Request
 ```
  0  1  2
-20 FF 00
+20 EN 00
 ```
+* EN: Entry Number - `FF` is last entry
