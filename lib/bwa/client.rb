@@ -27,8 +27,13 @@ module BWA
         message, bytes_read = Message.parse(@buffer)
        # discard how much we read
        @buffer = @buffer[bytes_read..-1] if bytes_read
-        unless message
-          @buffer.concat(@io.readpartial(64 * 1024))
+       unless message
+          begin
+            @buffer.concat(@io.readpartial(64 * 1024))
+          rescue EOFError
+            @io.wait_readable
+            retry
+          end
           next
         end
         break
