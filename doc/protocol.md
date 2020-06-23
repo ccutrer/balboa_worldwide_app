@@ -255,9 +255,9 @@ Message type 0a bf 22
  0  1  2
 08 00 00
 ```
-#### Fault Code Request
+#### Fault Log Request
 ```
  0  1  2
 20 EN 00
 ```
-* EN: Entry Number - `FF` is last entry
+* EN: Entry Number - 0x01 to 0x16, `FF` is last entry
