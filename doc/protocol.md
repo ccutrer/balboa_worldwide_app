@@ -260,4 +260,7 @@ Message type 0a bf 22
  0  1  2
 20 EN 00
 ```
-* EN: Entry Number - 0x00 to 0x17, `FF` is last entry
+* EN: Entry Number
+  * `00` is first entry
+  * Values larger than count roll-over (modulo)
+  * `FF` is last entry (-1)
