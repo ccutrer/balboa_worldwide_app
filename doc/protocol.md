@@ -108,14 +108,14 @@ SI SI SV SV SM SM SM SM SM SM SM SM SU CS CS CS CS HT HT DS DS
   * 0x0A = Standard
 * DS: DIP Switch Settings. Ex.: "1000000000"
 
-### Fault Code Response
+### Fault Log Response
 Message type 0a bf 28
 
 ```
  0  1  2  3  4  5  6  7  8  9
-EN ?? MC DD HH MM FF ST TA TB
+FC EN MC DD HH MM FF ST TA TB
 ```
-
+* FC: Fault Count
 * EN: Entry Number
 * MC: Message Code
 * DD: Days Ago
@@ -260,4 +260,4 @@ Message type 0a bf 22
  0  1  2
 20 EN 00
 ```
-* EN: Entry Number - 0x01 to 0x16, `FF` is last entry
+* EN: Entry Number - 0x00 to 0x17, `FF` is last entry
