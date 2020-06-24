@@ -9,7 +9,7 @@ When using RS-485, it's 115200,8,N,1.
 A message (either status update, or command) looks like:
 
 ```
-01 02 03 04 05 ... -2 -1
+ 0 1  2  3  4  ... -2 -1
 MS ML MT MT MT ... CS ME
 ```
 
@@ -31,7 +31,7 @@ Sent in response to a configuration request.
 Message type 0a bf 94
 
 ```
- 1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25
+ 0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24
 02 02 80 00 15 27 10 ab d2 00 00 00 00 00 00 00 00 00 15 27 ff ff 10 ab d2
 ```
 
@@ -40,13 +40,15 @@ This message is sent every second.
 
 ```
  0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23
-00 F1 CT HH MM F2 00 00 00 F3 F4 PP 00 F5 LF F6 00 00 00 00 ST 00 00 00
+F0 F1 CT HH MM F2 00 00 00 F3 F4 PP 00 F5 LF F6 00 00 00 00 ST 00 00 00
 ```
 
 Message Type: ff af 13
 
 * CT: Current Temperature (divide by two if in Celsius; ff if unknown)
 * ST: Set Temperature (ditto)
+* Flags 0:
+  * 0x05 = Hold Mode
 * Flags 1:
   * 0x01 = Priming
 * Flags 2:
@@ -54,7 +56,7 @@ Message Type: ff af 13
 * Flags 3:
   * 0x01 = Temperature Scale (0 = Fahrenheit, 1 = Celsius)
   * 0x02 = 24 Hour Time (0 = 12 hour time, 1 = 24 hour time)
-  * 0x0c = Filter Mode
+  * 0x0C = Filter Mode
 * Flags 4:
   * 0x30 = Heating (seems it can be 0, 1, or 2)
   * 0x04 = Temperature Range (0 = Low, 1 = High)
@@ -68,8 +70,8 @@ Message Type: ff af 13
 * HH: Hour (always 0-24, even in 12 hour mode; flag is used to control display)
 * MM: Minute
 
-### Filter Configuration
-This message is sent to all connected clients when any client sends a filter configuration request.
+### Filter Cycles Response
+This message is sent to all connected clients when any client sends a filter cycles request.
 
 Message type: 0a bf 23
 
@@ -87,28 +89,55 @@ Message type: 0a bf 23
 * 2D: Filter 2 duration hours
 * 2E: Filter 2 duration minutes
 
-### Control Configuration
+### Information Response
 In response to a control configuration request type 1.
 
 Message type: 0a bf 24
 
 ```
- 0  1 V0 V1 M0 M1 M2 M3 M4 M5 M6 M7 12 13 14 15 16 17 18 19 20
+ 0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20
+SI SI SV SV SM SM SM SM SM SM SM SM SU CS CS CS CS HT HT DS DS
 64 dc 11 00 42 46 42 50 32 30 20 20 01 3d 12 38 2e 01 0a 04 00
 ```
 
- * V0.V1: Sofware Version (ex 20.0)
- * M0..M7: Model name in ASCII
+* SI: Software ID (SSID). Ex.: "M100_220"
+* SV: Software ID (SSID) Version. Ex.: "V17"
+* SM: System Model, in ASCII. Ex.: "BFBP20  "
+* SU: Current Setup
+* CS: Configuration Signature. Ex.: "3D12382E"
+* HV: Heater Voltage:
+  * 0x01 = 240V
+* HT: Heater Type
+  * 0x0A = Standard
+* DS: DIP Switch Settings. Ex.: "1000000000"
 
-Other examples:
-
-```
-64dc 1100 4246425032302020 01 3d12382e 010a 0400
-64dc 1400 4250323030304731 04 51800c6b 010a 0200
-64c9 1300 4d51425035303120 01 0403daed 0106 0400
-64e1 2400 4d53343045202020 01 c3479636 030a 4400
+Other examples:	
+```	
+64dc 1100 4246425032302020 01 3d12382e 010a 0400	
+64dc 1400 4250323030304731 04 51800c6b 010a 0200	
+64c9 1300 4d51425035303120 01 0403daed 0106 0400	
+64e1 2400 4d53343045202020 01 c3479636 030a 4400	
 64e1 1400 4250323130304731 11 ebce9fd8 030a 1600
 ```
+
+### Fault Log Response
+Message type 0a bf 28
+
+```
+ 0  1  2  3  4  5  6  7  8  9
+FC EN MC DD HH MM FF ST TA TB
+```
+
+* FC: Fault Count
+* EN: Entry Number
+* MC: Message Code
+* DD: Days Ago
+* HH: Time Hours
+* MM: Time Minutes
+* FF: Flags (Heating Mode, Temp. Range)
+* ST: Set Temperature
+* TA: Sensor A Temperature
+* TB: Sensor B Temperature
 
 ### Control Configuration 2
 Sent when the app goes to the Controls screen
@@ -116,7 +145,7 @@ Sent when the app goes to the Controls screen
 Message type 0a bf 2e
 
 ```
- 1  2  3  4  5  6
+ 0  1  2  3  4  5
 0a 00 01 d0 00 44
 ```
 
@@ -136,7 +165,7 @@ You must have previously sent general configuration request before sending this.
 Message type: 0a bf 22
 
 ```
- 1  2  3
+ 0  1  2
 01 00 00
 ```
 
@@ -145,7 +174,7 @@ Message type: 0a bf 22
 Message type 0a bf 11
 
 ```
- 1  2
+ 0  1
 II 00
 ```
 
@@ -155,6 +184,7 @@ II 00
    * 0x06 - pump 3
    * 0x0C - blower
    * 0x11 - light 1
+   * 0x3C - hold mode
    * 0x51 - heating mode
    * 0x50 - temperature range
   
@@ -163,7 +193,7 @@ II 00
 Message type 0a bf 20
 
 ```
- 1
+ 0
 TT
 ```
 
@@ -177,7 +207,7 @@ range is 50-80 for F, 10-26 for C in low range
 Message type 0a bf 27
 
 ```
- 1  2
+ 0  1
 01 TS
 ```
 
@@ -190,7 +220,7 @@ Message type 0a bf 27
 Message type 0a bf 21
 
 ```
- 1  2
+ 0  1
 HH MM
 ```
 
@@ -202,7 +232,7 @@ HH MM
 Message type 0a bf 92
 
 ```
- 1  2 ...                             36 37 ....
+ 0  1 ...                             35 36 ....
 CT SL <32 bytes of SSID; null padded> ET PL <64 bytes of the passkey; null padded>
 ```
 
@@ -216,14 +246,38 @@ CT SL <32 bytes of SSID; null padded> ET PL <64 bytes of the passkey; null padde
  * SL - SSID length
  * PL - passkey length
 
-### Control Configuration Request
-Sent when the app goes to the Controls screen. First it sends it with arguments
-of 02 00 00, then it gets a response, and then sends it again with arguments of
-00 00 01.
+### Settings Request
 
 Message type 0a bf 22
 
+#### Panel Request
 ```
- 1  2  3
+ 0  1  2
+ 00 00 01
+ ```
+
+#### Filter Cycles Request
+```
+ 0  1  2
+01 00 00
+```
+#### Information Request
+Sent when the app goes to the Controls screen, then it gets a response, then sends a Panel Request.
+```
+ 0  1  2
 02 00 00
 ```
+#### Preferences Request
+```
+ 0  1  2
+08 00 00
+```
+#### Fault Log Request
+```
+ 0  1  2
+20 EN 00
+```
+* EN: Entry Number
+  * `00` is first entry
+  * Values larger than count roll-over (modulo)
+  * `FF` is last entry (-1)
