@@ -2,7 +2,7 @@ require 'bwa/message'
 
 module BWA
   class Client
-    attr_reader :last_status, :last_filter_configuration
+    attr_reader :last_status, :last_control_configuration, :last_control_configuration2, :last_filter_configuration
 
     def initialize(uri)
       uri = URI.parse(uri)
@@ -27,8 +27,13 @@ module BWA
         message, bytes_read = Message.parse(@buffer)
        # discard how much we read
        @buffer = @buffer[bytes_read..-1] if bytes_read
-        unless message
-          @buffer.concat(@io.readpartial(64 * 1024))
+       unless message
+          begin
+            @buffer.concat(@io.readpartial(64 * 1024))
+          rescue EOFError
+            @io.wait_readable
+            retry
+          end
           next
         end
         break
@@ -40,6 +45,8 @@ module BWA
       end
       @last_status = message.dup if message.is_a?(Messages::Status)
       @last_filter_configuration = message.dup if message.is_a?(Messages::FilterCycles)
+      @last_control_configuration = message.dup if message.is_a?(Messages::ControlConfiguration)
+      @last_control_configuration2 = message.dup if message.is_a?(Messages::ControlConfiguration2)
       message
     end
 
@@ -67,6 +74,10 @@ module BWA
       send_message("\x0a\xbf\x04")
     end
 
+    def request_control_info2
+      send_message("\x0a\xbf\x22\x00\x00\x01")
+    end
+
     def request_control_info
       send_message("\x0a\xbf\x22\x02\x00\x00")
     end
@@ -75,39 +86,58 @@ module BWA
       send_message("\x0a\xbf\x22\x01\x00\x00")
     end
 
-    def toggle_item(args)
-      send_message("\x0a\xbf\x11#{args}")
+    def toggle_item(item)
+      send_message("\x0a\xbf\x11#{item.chr}\x00")
     end
 
-    def toggle_light1
-      toggle_item("\x11\x00")
+    def toggle_pump(i)
+      toggle_item(i + 3)
     end
 
-    def toggle_pump1
-      toggle_item("\x04\x00")
+    def toggle_light(i)
+      toggle_item(i + 0x10)
     end
 
-    def toggle_pump2
-      toggle_item("\x05\x00")
+    def toggle_mister
+      toggle_item(0x0e)
     end
 
-    (1..2).each do |i|
-      class_eval <<-RUBY, __FILE__, __LINE__ + 1
-      def set_pump#{i}(desired)
-        return unless last_status
-        times = (desired - last_status.pump#{i}) % 3
-        times.times do
-          toggle_pump#{i}
-          sleep(0.1)
-        end
+    def toggle_blower
+      toggle_item(0x0c)
+    end
+
+    def set_pump(i, desired)
+      return unless last_status && last_control_configuration2
+      times = (desired - last_status.pumps[i - 1]) % (last_control_configuration2.pumps[i - 1] + 1)
+      times.times do
+        toggle_pump(i)
+        sleep(0.1)
       end
+    end
+
+    %w{light aux}.each do |type|
+      class_eval <<-RUBY, __FILE__, __LINE__ + 1
+        def set_#{type}(i, desired)
+          return unless last_status
+          return if last_status.#{type}s[i - 1] == desired
+          toggle_#{type}(i)
+        end
       RUBY
     end
 
-    def set_light1(desired)
+    def set_mister(desired)
       return unless last_status
-      return if last_status.light1 == desired
-      toggle_light1
+      return if last_status.mister == desired
+      toggle_mister
+    end
+
+    def set_blower(desired)
+      return unless last_status && last_control_configuration2
+      times = (desired - last_status.blower) % (last_control_configuration2.blower + 1)
+      times.times do
+        toggle_blower
+        sleep(0.1)
+      end
     end
 
     # high range is 80-104 for F, 26-40 for C (by 0.5)
@@ -129,7 +159,7 @@ module BWA
     end
 
     def toggle_temperature_range
-      toggle_item("\x50\x00")
+      toggle_item(0x50)
     end
 
     def set_temperature_range(desired)
@@ -139,7 +169,7 @@ module BWA
     end
 
     def toggle_heating_mode
-      toggle_item("\x51\x00")
+      toggle_item(0x51)
     end
 
     HEATING_MODES = %I{ready rest ready_in_rest}.freeze

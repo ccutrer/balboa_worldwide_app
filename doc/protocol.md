@@ -63,6 +63,7 @@ Message Type: ff af 13
 * Flags 5:
   * 0x02 = Circulation pump
   * 0x0C = Blower
+* Flags 6:
   * 0x01 = Mister
 * PP: Pump status: 0x03 for pump 1, 0x0C for pump 2 (or, shift two bits right, and then mask to 0x03), 0x30 for pump 3 (or, shift 4 bits right, and then mask to 0x3). Valid values for each are 0, 1 or 2.
 * LF: Light flag: 0x03 == 0x03 for on (I only have one light, and the app displays "Light 1", so I don't know why it's using two bits)
@@ -126,6 +127,7 @@ Message type 0a bf 28
  0  1  2  3  4  5  6  7  8  9
 FC EN MC DD HH MM FF ST TA TB
 ```
+
 * FC: Fault Count
 * EN: Entry Number
 * MC: Message Code
