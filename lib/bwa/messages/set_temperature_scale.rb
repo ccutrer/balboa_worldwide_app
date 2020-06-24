@@ -1,7 +1,7 @@
 module BWA
   module Messages
     class SetTemperatureScale < Message
-      MESSAGE_TYPE = "\x0a\xbf\x27".force_encoding(Encoding::ASCII_8BIT)
+      MESSAGE_TYPE = "\xbf\x27".force_encoding(Encoding::ASCII_8BIT)
       MESSAGE_LENGTH = 2
 
       attr_accessor :scale

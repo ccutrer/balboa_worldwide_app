@@ -25,9 +25,9 @@ module BWA
       message = bytes_read = nil
       loop do
         message, bytes_read = Message.parse(@buffer)
-       # discard how much we read
-       @buffer = @buffer[bytes_read..-1] if bytes_read
-       unless message
+        # discard how much we read
+        @buffer = @buffer[bytes_read..-1] if bytes_read
+        unless message
           begin
             @buffer.concat(@io.readpartial(64 * 1024))
           rescue EOFError

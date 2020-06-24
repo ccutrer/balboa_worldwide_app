@@ -1,7 +1,7 @@
 module BWA
   module Messages
     class ControlConfigurationRequest < Message
-      MESSAGE_TYPE = "\x0a\xbf\x22".force_encoding(Encoding::ASCII_8BIT)
+      MESSAGE_TYPE = "\xbf\x22".force_encoding(Encoding::ASCII_8BIT)
       MESSAGE_LENGTH = 3
 
       attr_accessor :type

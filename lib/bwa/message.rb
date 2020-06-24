@@ -11,6 +11,9 @@ module BWA
   end
 
   class Message
+    class Unrecognized < Message
+    end
+
     class << self
       def inherited(klass)
         @messages ||= []
@@ -42,21 +45,26 @@ module BWA
         puts "discarding invalid data prior to message #{data[0...offset].unpack('H*').first}" unless offset == 0
         #puts "read #{data.slice(offset, length + 2).unpack('H*').first}"
 
-        message_type = data.slice(offset + 2, 3)
+        src = data[offset + 2].ord
+        message_type = data.slice(offset + 3, 2)
         klass = @messages.find { |k| k::MESSAGE_TYPE == message_type }
 
 
         return [nil, offset + length + 2] if [
-                      "\xfe\xbf\x00".force_encoding(Encoding::ASCII_8BIT),
-                      "\x10\xbf\xe1".force_encoding(Encoding::ASCII_8BIT),
-                      "\x10\xbf\x07".force_encoding(Encoding::ASCII_8BIT)].include?(message_type)
+                      "\xbf\x00".force_encoding(Encoding::ASCII_8BIT),
+                      "\xbf\xe1".force_encoding(Encoding::ASCII_8BIT),
+                      "\xbf\x07".force_encoding(Encoding::ASCII_8BIT)].include?(message_type)
 
-        raise InvalidMessage.new("Unrecognized message #{message_type.unpack("H*").first}", data) unless klass
-        raise InvalidMessage.new("Unrecognized data length (#{length}) for message #{klass}", data) unless length - 5 == klass::MESSAGE_LENGTH
+        if klass
+          raise InvalidMessage.new("Unrecognized data length (#{length}) for message #{klass}", data) unless length - 5 == klass::MESSAGE_LENGTH
+        else
+          klass = Unrecognized
+        end
 
         message = klass.new
         message.parse(data.slice(offset + 5, length - 5))
         message.instance_variable_set(:@raw_data, data.slice(offset, length + 2))
+        message.instance_variable_set(:@src, src)
         [message, offset + length + 2]
       end
 
@@ -76,14 +84,19 @@ module BWA
       end
     end
 
-    attr_reader :raw_data
+    attr_reader :raw_data, :src
+
+    def initialize
+      # most messages we're sending come from this address
+      @src = 0x0a
+    end
 
     def parse(_data)
     end
 
     def serialize(message = "")
       length = message.length + 5
-      full_message = "#{length.chr}#{self.class::MESSAGE_TYPE}#{message}".force_encoding(Encoding::ASCII_8BIT)
+      full_message = "#{length.chr}#{src.chr}#{self.class::MESSAGE_TYPE}#{message}".force_encoding(Encoding::ASCII_8BIT)
       checksum = CRC.checksum(full_message)
       "\x7e#{full_message}#{checksum.chr}\x7e".force_encoding(Encoding::ASCII_8BIT)
     end

@@ -5,7 +5,7 @@ module BWA
                   :filter2_enabled,
                   :filter2_hour, :filter2_minute, :filter2_duration_hours, :filter2_duration_minutes
 
-      MESSAGE_TYPE = "\x0a\xbf\x23".force_encoding(Encoding::ASCII_8BIT)
+      MESSAGE_TYPE = "\xbf\x23".force_encoding(Encoding::ASCII_8BIT)
       MESSAGE_LENGTH = 8
 
       def parse(data)

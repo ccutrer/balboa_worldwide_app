@@ -1,7 +1,7 @@
 module BWA
   module Messages
     class ToggleItem < Message
-      MESSAGE_TYPE = "\x0a\xbf\x11".force_encoding(Encoding::ASCII_8BIT)
+      MESSAGE_TYPE = "\xbf\x11".force_encoding(Encoding::ASCII_8BIT)
       MESSAGE_LENGTH = 2
 
       attr_accessor :item
@@ -15,8 +15,10 @@ module BWA
                       when 0x04; :pump1
                       when 0x05; :pump2
                       when 0x11; :light1
+                      when 0x3c; :hold
                       when 0x50; :temperature_range
                       when 0x51; :heating_mode
+                      else; data[0].ord
                     end
       end
 

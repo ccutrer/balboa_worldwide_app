@@ -17,10 +17,11 @@ module BWA
                     :aux,
                     :current_temperature, :set_temperature
 
-      MESSAGE_TYPE = "\xff\xaf\x13".force_encoding(Encoding::ASCII_8BIT)
+      MESSAGE_TYPE = "\xaf\x13".force_encoding(Encoding::ASCII_8BIT)
       MESSAGE_LENGTH = 24
 
       def initialize
+        @src = 0xff
         self.priming = false
         self.heating_mode = :ready
         @temperature_scale = :fahrenheit
