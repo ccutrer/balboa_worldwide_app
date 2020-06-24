@@ -40,7 +40,7 @@ This message is sent every second.
 
 ```
  0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23
-F0 F1 CT HH MM F2 00 00 00 F3 F4 PP 00 F5 LF 00 00 00 00 00 ST 00 00 00
+F0 F1 CT HH MM F2 00 00 00 F3 F4 PP 00 F5 LF F6 00 00 00 00 ST 00 00 00
 ```
 
 Message Type: ff af 13
@@ -56,12 +56,14 @@ Message Type: ff af 13
 * Flags 3:
   * 0x01 = Temperature Scale (0 = Fahrenheit, 1 = Celsius)
   * 0x02 = 24 Hour Time (0 = 12 hour time, 1 = 24 hour time)
+  * 0x0C = Filter Mode
 * Flags 4:
   * 0x30 = Heating (seems it can be 0, 1, or 2)
   * 0x04 = Temperature Range (0 = Low, 1 = High)
 * Flags 5:
   * 0x02 = Circulation pump
   * 0x0C = Blower
+  * 0x01 = Mister
 * PP: Pump status: 0x03 for pump 1, 0x0C for pump 2 (or, shift two bits right, and then mask to 0x03), 0x30 for pump 3 (or, shift 4 bits right, and then mask to 0x3). Valid values for each are 0, 1 or 2.
 * LF: Light flag: 0x03 == 0x03 for on (I only have one light, and the app displays "Light 1", so I don't know why it's using two bits)
 * HH: Hour (always 0-24, even in 12 hour mode; flag is used to control display)
@@ -107,6 +109,15 @@ SI SI SV SV SM SM SM SM SM SM SM SM SU CS CS CS CS HT HT DS DS
 * HT: Heater Type
   * 0x0A = Standard
 * DS: DIP Switch Settings. Ex.: "1000000000"
+
+Other examples:	
+```	
+64dc 1100 4246425032302020 01 3d12382e 010a 0400	
+64dc 1400 4250323030304731 04 51800c6b 010a 0200	
+64c9 1300 4d51425035303120 01 0403daed 0106 0400	
+64e1 2400 4d53343045202020 01 c3479636 030a 4400	
+64e1 1400 4250323130304731 11 ebce9fd8 030a 1600
+```
 
 ### Fault Log Response
 Message type 0a bf 28
@@ -234,11 +245,14 @@ CT SL <32 bytes of SSID; null padded> ET PL <64 bytes of the passkey; null padde
  * PL - passkey length
 
 ### Settings Request
-Sent when the app goes to the Controls screen. First it sends it with arguments
-of 02 00 00, then it gets a response, and then sends it again with arguments of
-00 00 01.
 
 Message type 0a bf 22
+
+#### Panel Request
+```
+ 0  1  2
+ 00 00 01
+ ```
 
 #### Filter Cycles Request
 ```
@@ -246,6 +260,7 @@ Message type 0a bf 22
 01 00 00
 ```
 #### Information Request
+Sent when the app goes to the Controls screen, then it gets a response, then sends a Panel Request.
 ```
  0  1  2
 02 00 00
