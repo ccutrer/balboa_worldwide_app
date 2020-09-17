@@ -1,7 +1,7 @@
 module BWA
   module Messages
     class SetTime < Message
-      MESSAGE_TYPE = "\x0a\xbf\x21".force_encoding(Encoding::ASCII_8BIT)
+      MESSAGE_TYPE = "\xbf\x21".force_encoding(Encoding::ASCII_8BIT)
       MESSAGE_LENGTH = 2
 
       attr_accessor :hour, :minute, :twenty_four_hour_time

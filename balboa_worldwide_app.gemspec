@@ -16,7 +16,7 @@ Gem::Specification.new do |s|
   s.add_dependency 'digest-crc', "~> 0.4"
   s.add_dependency 'mqtt', "~> 0.5.0"
   s.add_dependency 'net-telnet-rfc2217', "~> 0.0.3"
-  s.add_dependency 'serialport', "~> 1.3.1"
+  s.add_dependency 'rubyserial', "~> 0.6.0"
 
   s.add_development_dependency 'byebug', "~> 9.0"
   s.add_development_dependency 'rake', "~> 13.0"

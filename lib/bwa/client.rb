@@ -14,8 +14,8 @@ module BWA
         @io = Net::Telnet::RFC2217.new("Host" => uri.host, "Port" => uri.port || 23, "baud" => 115200)
         @queue = []
       else
-        require 'serialport'
-        @io = SerialPort.open(uri.path, "baud" => 115200)
+        require 'rubyserial'
+        @io = Serial.new(uri.path, 115200)
         @queue = []
       end
       @buffer = ""
@@ -27,9 +27,10 @@ module BWA
         message, bytes_read = Message.parse(@buffer)
         # discard how much we read
         @buffer = @buffer[bytes_read..-1] if bytes_read
+        method = @io.respond_to?(:readpartial) ? :readpartial : :read
         unless message
           begin
-            @buffer.concat(@io.readpartial(64 * 1024))
+            @buffer.concat(@io.send(method, 64 * 1024))
           rescue EOFError
             @io.wait_readable
             retry
