@@ -145,7 +145,7 @@ module BWA
     # low range is 50-80 for F, 10-26 for C (by 0.5)
     def set_temperature(desired)
       desired *= 2 if last_status && last_status.temperature_scale == :celsius || desired < 50
-      send_message("\x0a\xbf\x20#{desired.chr}")
+      send_message("\x0a\xbf\x20#{desired.to_i.chr}")
     end
 
     def set_time(hour, minute, twenty_four_hour_time = false)
