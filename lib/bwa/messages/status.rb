@@ -79,8 +79,10 @@ module BWA
         self.current_temperature = data[2].ord
         self.current_temperature = nil if self.current_temperature == 0xff
         self.set_temperature = data[20].ord
-        if temperature_scale == :celsius
+        if self.current_temperature and temperature_scale == :celsius
           self.current_temperature /= 2.0
+        end
+        if self.set_temperature and temperature_scale == :celsius
           self.set_temperature /= 2.0
         end
       end
