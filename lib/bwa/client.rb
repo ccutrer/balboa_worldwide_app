@@ -144,7 +144,7 @@ module BWA
     # high range is 80-104 for F, 26-40 for C (by 0.5)
     # low range is 50-80 for F, 10-26 for C (by 0.5)
     def set_temperature(desired)
-      desired *= 2.0 if last_status && last_status.temperature_scale == :celsius || desired < 50
+      desired *= 2 if last_status && last_status.temperature_scale == :celsius || desired < 50
       send_message("\x0a\xbf\x20#{desired.chr}")
     end
 
