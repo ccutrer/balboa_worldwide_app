@@ -18,7 +18,7 @@ module BWA
                     :current_temperature, :set_temperature
 
       MESSAGE_TYPE = "\xaf\x13".force_encoding(Encoding::ASCII_8BIT)
-      MESSAGE_LENGTH = 24
+      MESSAGE_LENGTH = 27
 
       def initialize
         @src = 0xff
@@ -86,7 +86,7 @@ module BWA
       end
 
       def serialize
-        data = "\x00" * 24
+        data = "\x00" * MESSAGE_LENGTH
         data[1] = (priming ? 0x01 : 0x00).chr
         data[5] = (case heating_mode
                      when :ready; 0x00
