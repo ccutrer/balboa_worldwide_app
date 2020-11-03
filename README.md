@@ -1,7 +1,7 @@
 # Balboa Worldwide App gem
 
 ## Changes made in this fork
-I've added support for my Balboa Spa controller BP200G3_235 V52.0
+I've added support for my Balboa Spa controller BP200G3 M100_235 V52.0
 
 This gem is a Ruby library for interacting with Wifi spa controllers from
 Balboa Water Group. There is no documentation on the protocol, and it has
