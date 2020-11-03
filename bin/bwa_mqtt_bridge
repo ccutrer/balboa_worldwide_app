@@ -22,8 +22,8 @@ class MQTTBridge
         begin
           message = @bwa.poll
           next if message.is_a?(BWA::Messages::Ready)
-
-          puts message.inspect unless message.is_a?(BWA::Messages::Status)
+          puts message.inspect unless message.is_a?(BWA::Messages::Status) || message.is_a?(BWA::Messages::ToggleItem)
+            
           case message
           when BWA::Messages::ControlConfiguration
             publish("spa/$type", message.model)
