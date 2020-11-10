@@ -14,8 +14,8 @@ module BWA
         @io = Net::Telnet::RFC2217.new("Host" => uri.host, "Port" => uri.port || 23, "baud" => 115200)
         @queue = []
       else
-        require 'rubyserial'
-        @io = Serial.new(uri.path, 115200)
+        require 'ccutrer-serialport'
+        @io = CCutrer::SerialPort.new(uri.path, baud: 115200)
         @queue = []
       end
       @buffer = ""
