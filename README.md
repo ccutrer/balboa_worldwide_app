@@ -1,9 +1,9 @@
 # Changes made in this fork
-I've added support for my Balboa Spa controller BP200G3 M100_235 V52.0 (see commit https://github.com/richard-otto-obrien/balboa_worldwide_app/commit/6b042f8bc787640600974a7e4c87a5267a745cdd).
+I've added support for my Balboa Spa controller BP200G3 M100_235 V52.0 [6b042f8](https://github.com/richard-otto-obrien/balboa_worldwide_app/commit/6b042f8bc787640600974a7e4c87a5267a745cdd)
 
-I've also fixed a bug not allow 0.5 decimal changes when using Celsius (see https://github.com/richard-otto-obrien/balboa_worldwide_app/commit/f38f34dc58e1eeddae774e125f8810214d9b4208 and https://github.com/richard-otto-obrien/balboa_worldwide_app/commit/71d8eeaf39aab3dbfd52cf065710cb0d27df0d33)
+I've also fixed a bug not allow 0.5 decimal changes when using Celsius [f38f34d](https://github.com/richard-otto-obrien/balboa_worldwide_app/commit/f38f34dc58e1eeddae774e125f8810214d9b4208) [71d8eea](https://github.com/richard-otto-obrien/balboa_worldwide_app/commit/71d8eeaf39aab3dbfd52cf065710cb0d27df0d33)
 
-I've removed the printing of ToggleItem to console (https://github.com/richard-otto-obrien/balboa_worldwide_app/commit/48899550cfb7ff63d0dd4d1668adfa76794564f8)
+I've removed the printing of ToggleItem to console [4889955](https://github.com/richard-otto-obrien/balboa_worldwide_app/commit/48899550cfb7ff63d0dd4d1668adfa76794564f8)
 
 # Balboa Worldwide App gem
 
