@@ -56,7 +56,12 @@ module BWA
                       "\xbf\x07".force_encoding(Encoding::ASCII_8BIT)].include?(message_type)
 
         if klass
-          raise InvalidMessage.new("Unrecognized data length (#{length}) for message #{klass}", data) unless length - 5 == klass::MESSAGE_LENGTH
+          valid_length = if klass::MESSAGE_LENGTH.respond_to?(:include?)
+            klass::MESSAGE_LENGTH.include?(length - 5)
+          else
+            length - 5 == klass::MESSAGE_LENGTH
+          end
+          raise InvalidMessage.new("Unrecognized data length (#{length}) for message #{klass}", data) unless valid_length
         else
           klass = Unrecognized
         end

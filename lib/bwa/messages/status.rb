@@ -18,7 +18,8 @@ module BWA
                     :current_temperature, :set_temperature
 
       MESSAGE_TYPE = "\xaf\x13".force_encoding(Encoding::ASCII_8BIT)
-      MESSAGE_LENGTH = 24
+      # additional features have been added in later versions
+      MESSAGE_LENGTH = 24..28
 
       def initialize
         @src = 0xff
