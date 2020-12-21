@@ -30,7 +30,7 @@ module BWA
         method = @io.respond_to?(:readpartial) ? :readpartial : :read
         unless message
           begin
-            @buffer.concat(@io.send(method, 64 * 1024))
+            @buffer.concat(@io.__send__(method, 64 * 1024))
           rescue EOFError
             @io.wait_readable
             retry
