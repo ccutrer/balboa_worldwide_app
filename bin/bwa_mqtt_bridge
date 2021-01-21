@@ -22,7 +22,7 @@ class MQTTBridge
         begin
           message = @bwa.poll
           next if message.is_a?(BWA::Messages::Ready)
-          puts message.inspect unless message.is_a?(BWA::Messages::Status) || message.is_a?(BWA::Messages::ToggleItem)
+          puts message.inspect unless message.is_a?(BWA::Messages::Status)
             
           case message
           when BWA::Messages::ControlConfiguration
