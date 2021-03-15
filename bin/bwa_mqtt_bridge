@@ -126,7 +126,7 @@ class MQTTBridge
         next @bwa.toggle_blower if value == 'toggle'
         @bwa.set_blower(value.to_i)
       when "spa/settemperature/set"
-        @bwa.set_temperature(value.to_i)
+        @bwa.set_temperature(value.to_f)
       end
     end
   end
@@ -186,10 +186,10 @@ class MQTTBridge
     subscribe("spa/temperaturerange/set")
 
     publish("spa/currenttemperature/$name", "Current temperature")
-    publish("spa/currenttemperature/$datatype", "integer")
+    publish("spa/currenttemperature/$datatype", "float")
 
     publish("spa/settemperature/$name", "Set Temperature")
-    publish("spa/settemperature/$datatype", "integer")
+    publish("spa/settemperature/$datatype", "float")
     publish("spa/settemperature/$settable", "true")
     subscribe("spa/settemperature/set")
 
