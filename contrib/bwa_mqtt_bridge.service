@@ -6,6 +6,9 @@ User=cody
 ExecStart=/usr/local/bin/bwa_mqtt_bridge mqtt://localhost/ /dev/ttyHotTub
 Restart=always
 RestartSec=3s
+Type=notify
+NotifyAccess=main
+WatchdogSec=60
 
 [Install]
 WantedBy=multi-user.target
