@@ -19,7 +19,7 @@ module BWA
 
       MESSAGE_TYPE = "\xaf\x13".force_encoding(Encoding::ASCII_8BIT)
       # additional features have been added in later versions
-      MESSAGE_LENGTH = 24..28
+      MESSAGE_LENGTH = 24..32
 
       def initialize
         @src = 0xff
