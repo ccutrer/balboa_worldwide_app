@@ -7,6 +7,7 @@ module BWA
       attr_accessor :temperature
 
       def initialize(temperature = nil)
+        super()
         self.temperature = temperature
       end
 

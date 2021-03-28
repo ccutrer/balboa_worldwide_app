@@ -7,6 +7,7 @@ module BWA
       attr_accessor :scale
 
       def initialize(scale = nil)
+        super()
         self.scale = scale
       end
 

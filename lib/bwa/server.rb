@@ -1,4 +1,5 @@
 require 'socket'
+require 'bwa/logger'
 require 'bwa/message'
 
 module BWA
@@ -26,7 +27,7 @@ module BWA
     end
 
     def run_client(socket)
-      puts "Received connection from #{socket.remote_address.inspect}"
+      BWA.logger.info "Received connection from #{socket.remote_address.inspect}"
 
       send_status(socket)
       loop do
@@ -35,8 +36,8 @@ module BWA
           break if data.empty?
           begin
             message = Message.parse(data)
-            puts message.raw_data.unpack("H*").first.scan(/[0-9a-f]{2}/).join(' ')
-            puts message.inspect
+            BWA.logger.info message.raw_data.unpack("H*").first.scan(/[0-9a-f]{2}/).join(' ')
+            BWA.logger.info message.inspect
 
             case message
             when Messages::ConfigurationRequest
@@ -64,8 +65,8 @@ module BWA
               end
             end
           rescue BWA::InvalidMessage => e
-            puts e.message
-            puts e.raw_data.unpack("H*").first.scan(/[0-9a-f]{2}/).join(' ')
+            BWA.logger.warn e.message
+            BWA.logger.warn e.raw_data.unpack("H*").first.scan(/[0-9a-f]{2}/).join(' ')
           end
         else
           send_status(socket)
@@ -74,7 +75,7 @@ module BWA
     end
 
     def send_status(socket)
-      puts "sending #{@status.inspect}"
+      BWA.logger.info "sending #{@status.inspect}"
       socket.send(@status.serialize, 0)
     end
 

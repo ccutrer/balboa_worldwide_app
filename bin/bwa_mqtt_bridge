@@ -2,9 +2,12 @@
 
 require 'mqtt'
 require 'sd_notify'
+require 'set'
 
+require 'bwa/logger'
 require 'bwa/client'
 require 'bwa/discovery'
+require 'bwa/version'
 
 class MQTTBridge
   def initialize(mqtt_uri, bwa, device_id: "bwa", base_topic: "homie")
@@ -19,6 +22,7 @@ class MQTTBridge
     publish_basic_attributes
 
     # Tell systemd we've started up OK. Ignored if systemd not in use.
+    BWA.logger.warn "Balboa MQTT Bridge running (version #{BWA::VERSION})"
     SdNotify.ready
 
     bwa_thread = Thread.new do
@@ -27,7 +31,6 @@ class MQTTBridge
           message = @bwa.poll
           next if message.is_a?(BWA::Messages::Ready)
 
-          puts message.inspect unless message.is_a?(BWA::Messages::Status)
           case message
           when BWA::Messages::ControlConfiguration
             publish("spa/$type", message.model)
@@ -58,6 +61,7 @@ class MQTTBridge
 
             # allow a skew of 1 minute, since the seconds will always be off
             if diff > 1
+              BWA.logger.info "Spa time #{"%02d:%02d" % [message.hour, message.minute]}, actually #{"%02d:%02d" % [now.hour, now.min]}; correcting difference of #{diff} min"
               @bwa.set_time(now.hour, now.min, message.twenty_four_hour_time)
             end
             publish_attribute("spa/priming", message.priming)
@@ -101,7 +105,7 @@ class MQTTBridge
     end
 
     @mqtt.get do |topic, value|
-      puts "got #{value.inspect} at #{topic}"
+      BWA.logger.warn "from mqtt: #{value.inspect} at #{topic}"
       case topic[@base_topic.length + 1..-1]
       when "spa/heatingmode/set"
         next @bwa.toggle_heating_mode if value == 'toggle'
@@ -139,6 +143,7 @@ class MQTTBridge
   end
 
   def publish(topic, value)
+    BWA.logger.debug "  to mqtt: #{topic}: #{value}"
     @mqtt.publish("#{@base_topic}/#{topic}", value, true)
   end
 
@@ -267,6 +272,7 @@ mqtt_uri = ARGV.shift
 if ARGV.empty?
   spas = BWA::Discovery.discover
   if spas.empty?
+    BWA.logger.fatal "Could not find spa!"
     $stderr.puts "Could not find spa!"
     exit 1
   end

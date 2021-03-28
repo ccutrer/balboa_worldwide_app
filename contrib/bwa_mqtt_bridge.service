@@ -4,6 +4,7 @@ Description=Balboa Spa MQTT Bridge
 [Service]
 User=cody
 ExecStart=/usr/local/bin/bwa_mqtt_bridge mqtt://localhost/ /dev/ttyHotTub
+Environment="LOG_LEVEL=WARN" "LOG_VERBOSITY=0"
 Restart=always
 RestartSec=3s
 Type=notify

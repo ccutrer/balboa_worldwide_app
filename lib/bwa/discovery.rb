@@ -1,4 +1,5 @@
 require 'socket'
+require 'bwa/logger'
 
 module BWA
   class Discovery
@@ -34,7 +35,7 @@ module BWA
           data, addr = socket.recvfrom(32)
           next unless data == 'Discovery: Who is out there?'
           ip = addr.last
-          puts "Advertising to #{ip}"
+          BWA.logger.info "Advertising to #{ip}"
           socket.sendmsg(msg, 0, Socket.sockaddr_in(addr[1], ip))
         end
       end
