@@ -27,18 +27,28 @@ module BWA
           offset += 1
           return nil if data.length - offset < 5
 
+          # Keep scanning until message start char
           next unless data[offset] == '~'
+
+          # Read length (safe since we have at least 5 chars)
           length = data[offset + 1].ord
-          # impossible message
-          next if length < 5
+
+          # No message is this short or this long; keep scanning
+          next if length < 5 or length >= '~'.ord
 
           # don't have enough data for what this message wants;
-          # it could be garbage on the line so keep scanning
-          next if length + 2 > data.length - offset
+          # return and hope for more (yes this might cause a
+          # delay, but the protocol is very chatty so it won't
+          # be long)
+          return nil if length + 2 > data.length - offset
 
+          # Not properly terminated; keep scanning
           next unless data[offset + length + 1] == '~'
 
+          # Not a valid checksum; keep scanning
           next unless CRC.checksum(data.slice(offset + 1, length - 1)) == data[offset + length].ord
+
+          # Got a valid message!
           break
         end
 
