@@ -154,7 +154,7 @@ class MQTTBridge
   end
 
   def publish_basic_attributes
-    publish("$homie", "v4.0.0")
+    publish("$homie", "4.0.0")
     publish("$name", "BWA Spa")
     publish("$state", "init")
     publish("$nodes", "spa")
