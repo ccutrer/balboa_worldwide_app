@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 
 require 'mqtt'
+require 'sd_notify'
 
 require 'bwa/client'
 require 'bwa/discovery'
@@ -16,6 +17,9 @@ class MQTTBridge
     @things = Set.new
 
     publish_basic_attributes
+
+    # Tell systemd we've started up OK. Ignored if systemd not in use.
+    SdNotify.ready
 
     bwa_thread = Thread.new do
       loop do
@@ -88,6 +92,9 @@ class MQTTBridge
             (0..1).each do |i|
               publish_attribute("spa/aux#{i + 1}", message.lights[i]) if @bwa.last_control_configuration2&.aux&.[](i)
             end
+
+            # Tell systemd we are still alive and kicking. Ignored if systemd not in use.
+            SdNotify.watchdog
           end
         end
       end
