@@ -23,6 +23,13 @@ module BWA
         @messages << klass
       end
 
+      # Ignore (parse and throw away) messages of these types.
+      IGNORED_MESSAGES = [
+        "\xbf\x00".force_encoding(Encoding::ASCII_8BIT),  # request for new clients
+        "\xbf\xe1".force_encoding(Encoding::ASCII_8BIT),
+        "\xbf\x07".force_encoding(Encoding::ASCII_8BIT),  # nothing to send
+      ]
+
       # Don't log messages of these types, even in DEBUG mode.
       # They are very frequent and would swamp the logs.
       def common_messages
@@ -48,6 +55,7 @@ module BWA
         message_type = length = message_class = nil
         loop do
           offset += 1
+          # Not enough data for a full message; return and hope for more
           return nil if data.length - offset < 5
 
           # Keep scanning until message start char
@@ -82,11 +90,8 @@ module BWA
         src = data[offset + 2].ord
         klass = @messages.find { |k| k::MESSAGE_TYPE == message_type }
 
-
-        return [nil, offset + length + 2] if [
-                      "\xbf\x00".force_encoding(Encoding::ASCII_8BIT),
-                      "\xbf\xe1".force_encoding(Encoding::ASCII_8BIT),
-                      "\xbf\x07".force_encoding(Encoding::ASCII_8BIT)].include?(message_type)
+        # Ignore these message types
+        return [nil, offset + length + 2] if IGNORED_MESSAGES.include?(message_type)
 
         if klass
           valid_length = if klass::MESSAGE_LENGTH.respond_to?(:include?)
