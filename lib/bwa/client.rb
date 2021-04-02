@@ -1,3 +1,4 @@
+require 'bwa/logger'
 require 'bwa/message'
 
 module BWA
@@ -41,7 +42,7 @@ module BWA
       end
 
       if message.is_a?(Messages::Ready) && (msg = @queue&.shift)
-        puts "wrote #{msg.unpack('H*').first}"
+        BWA.logger.debug "wrote: #{BWA.raw2str(msg)}" unless BWA.verbosity < 1 && msg[3..4] == "\xbf\x22"
         @io.write(msg)
       end
       @last_status = message.dup if message.is_a?(Messages::Status)
@@ -64,9 +65,11 @@ module BWA
       full_message = "#{length.chr}#{message}".force_encoding(Encoding::ASCII_8BIT)
       checksum = CRC.checksum(full_message)
       full_message = "\x7e#{full_message}#{checksum.chr}\x7e".force_encoding(Encoding::ASCII_8BIT)
+      BWA.logger.info "  to spa: #{BWA.raw2str(message)}" unless BWA.verbosity < 1 && message[1..2] == "\xbf\x22"
       if @queue
         @queue.push(full_message)
       else
+        BWA.logger.debug "wrote: #{BWA.raw2str(full_message)}" unless BWA.verbosity < 1 && message[3..4] == "\xbf\x22"
         @io.write(full_message)
       end
     end

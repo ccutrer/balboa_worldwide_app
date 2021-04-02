@@ -1,3 +1,4 @@
+require 'bwa/logger'
 require 'bwa/crc'
 
 module BWA
@@ -18,6 +19,26 @@ module BWA
       def inherited(klass)
         @messages ||= []
         @messages << klass
+      end
+
+      # Don't log messages of these types, even in DEBUG mode.
+      # They are very frequent and would swamp the logs.
+      def common_messages
+        @COMMON_MESSAGES ||= begin
+          msgs = []
+          msgs += [
+            Messages::Status::MESSAGE_TYPE,
+            "\xbf\xe1".force_encoding(Encoding::ASCII_8BIT),
+          ] unless BWA.verbosity >= 1
+          msgs += [
+            "\xbf\x00".force_encoding(Encoding::ASCII_8BIT),
+            "\xbf\xe1".force_encoding(Encoding::ASCII_8BIT),
+            Messages::Ready::MESSAGE_TYPE,
+            "\xbf\x07".force_encoding(Encoding::ASCII_8BIT),
+          ] unless BWA.verbosity >= 2
+          msgs
+        end
+        @COMMON_MESSAGES
       end
 
       def parse(data)
@@ -52,11 +73,11 @@ module BWA
           break
         end
 
-        puts "discarding invalid data prior to message #{data[0...offset].unpack('H*').first}" unless offset == 0
-        #puts "read #{data.slice(offset, length + 2).unpack('H*').first}"
+        message_type = data.slice(offset + 3, 2)
+        BWA.logger.debug "discarding invalid data prior to message #{BWA.raw2str(data[0...offset])}" unless offset == 0
+        BWA.logger.debug " read: #{BWA.raw2str(data.slice(offset, length + 2))}" unless common_messages.include?(message_type)
 
         src = data[offset + 2].ord
-        message_type = data.slice(offset + 3, 2)
         klass = @messages.find { |k| k::MESSAGE_TYPE == message_type }
 
 
@@ -73,6 +94,7 @@ module BWA
           end
           raise InvalidMessage.new("Unrecognized data length (#{length}) for message #{klass}", data) unless valid_length
         else
+          BWA.logger.info "Unrecognized message type #{BWA.raw2str(message_type)}: #{BWA.raw2str(data.slice(offset, length + 2))}"
           klass = Unrecognized
         end
 
@@ -80,6 +102,7 @@ module BWA
         message.parse(data.slice(offset + 5, length - 5))
         message.instance_variable_set(:@raw_data, data.slice(offset, length + 2))
         message.instance_variable_set(:@src, src)
+        BWA.logger.debug "from spa: #{message.inspect}" unless common_messages.include?(message_type)
         [message, offset + length + 2]
       end
 
