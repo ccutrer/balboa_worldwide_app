@@ -12,6 +12,8 @@ module BWA
   end
 
   class Message
+    attr_accessor :src
+
     class Unrecognized < Message
     end
 
