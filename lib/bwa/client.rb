@@ -1,3 +1,5 @@
+require 'uri'
+
 require 'bwa/message'
 
 module BWA

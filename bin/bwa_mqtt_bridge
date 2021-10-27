@@ -2,6 +2,7 @@
 
 require 'mqtt'
 require 'sd_notify'
+require 'set'
 
 require 'bwa/client'
 require 'bwa/discovery'
