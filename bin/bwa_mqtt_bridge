@@ -18,6 +18,7 @@ class MQTTBridge
     @things = Set.new
 
     publish_basic_attributes
+    publish_filtercycles
 
     # Tell systemd we've started up OK. Ignored if systemd not in use.
     SdNotify.ready
@@ -46,9 +47,20 @@ class MQTTBridge
             publish_blower(message.blower) if message.blower != 0
             publish_circpump if message.circ_pump
             publish("$state", "ready")
+          when BWA::Messages::FilterCycles
+            publish_attribute("spa/filter1hour",message.filter1_hour)
+            publish_attribute("spa/filter1minute",message.filter1_minute)
+            publish_attribute("spa/filter1durationhours",message.filter1_duration_hours)
+            publish_attribute("spa/filter1durationminutes",message.filter1_duration_minutes)
+            publish_attribute("spa/filter2enabled",message.filter2_enabled)
+            publish_attribute("spa/filter2hour",message.filter2_hour)
+            publish_attribute("spa/filter2minute",message.filter2_minute)
+            publish_attribute("spa/filter2durationhours",message.filter2_duration_hours)
+            publish_attribute("spa/filter2durationminutes",message.filter2_duration_minutes)
           when BWA::Messages::Status
             @bwa.request_control_info unless @bwa.last_control_configuration
             @bwa.request_control_info2 unless @bwa.last_control_configuration2
+            @bwa.request_filter_configuration unless @bwa.last_filter_configuration 
 
             # make sure time is in sync
             now = Time.now
@@ -61,6 +73,7 @@ class MQTTBridge
             if diff > 1
               @bwa.set_time(now.hour, now.min, message.twenty_four_hour_time)
             end
+            publish_attribute("spa/hold", message.hold)
             publish_attribute("spa/priming", message.priming)
             publish_attribute("spa/heatingmode", message.heating_mode)
             publish_attribute("spa/temperaturescale", message.temperature_scale)
@@ -72,10 +85,8 @@ class MQTTBridge
             publish_attribute("spa/settemperature", message.set_temperature)
             publish_attribute("spa/settemperature/$unit", "º#{message.temperature_scale.to_s[0].upcase}")
             if message.temperature_scale == :celsius
-              publish_attribute("spa/currenttemperature/$format", message.temperature_range == :high ? "26:40" : "10:26")
               publish_attribute("spa/settemperature/$format", message.temperature_range == :high ? "26:40" : "10:26")
             else
-              publish_attribute("spa/currenttemperature/$format", message.temperature_range == :high ? "80:104" : "26:40")
               publish_attribute("spa/settemperature/$format", message.temperature_range == :high ? "80:104" : "26:40")
             end
             publish_attribute("spa/filter1", message.filter[0])
@@ -96,6 +107,7 @@ class MQTTBridge
 
             # Tell systemd we are still alive and kicking. Ignored if systemd not in use.
             SdNotify.watchdog
+
           end
         end
       end
@@ -104,6 +116,10 @@ class MQTTBridge
     @mqtt.get do |topic, value|
       puts "got #{value.inspect} at #{topic}"
       case topic[@base_topic.length + 1..-1]
+      when "spa/hold/set"
+        next @bwa.toggle_hold if value == 'toggle'
+        next unless %w{true false}.include?(value)
+        @bwa.set_hold(value == 'true')
       when "spa/heatingmode/set"
         next @bwa.toggle_heating_mode if value == 'toggle'
         next unless %w{ready rest}.include?(value)
@@ -135,6 +151,8 @@ class MQTTBridge
         @bwa.set_blower(value.to_i)
       when "spa/settemperature/set"
         @bwa.set_temperature(value.to_f)
+      when %r{^spa/(filter[12](hour|minute|durationhours|durationminutes|enabled))/set$}
+        @bwa.set_filtercycles($1, value)
       end
     end
   end
@@ -163,6 +181,11 @@ class MQTTBridge
     publish("spa/$name", "BWA Spa")
     publish("spa/$type", "spa")
     publish_nodes
+
+    publish("spa/hold/$name", "In Hold mode")
+    publish("spa/hold/$datatype", "boolean")
+    publish("spa/hold/$settable", "true")
+    subscribe("spa/hold/set")
 
     publish("spa/priming/$name", "Is the pump priming")
     publish("spa/priming/$datatype", "boolean")
@@ -258,8 +281,68 @@ class MQTTBridge
     publish_nodes
   end
 
+  def publish_filtercycles
+    publish("spa/filter1hour/$name", "Filter Cycle 1 Start Hour")
+    publish("spa/filter1hour/$datatype", "integer")
+    publish("spa/filter1hour/$format", "0:24")
+    publish("spa/filter1hour/$settable", "true")
+
+    publish("spa/filter1minute/$name", "Filter Cycle 1 Start Minutes")
+    publish("spa/filter1minute/$datatype", "integer")
+    publish("spa/filter1minute/$format", "0:59")
+    publish("spa/filter1minute/$settable", "true")
+
+    publish("spa/filter1durationhours/$name", "Filter Cycle 1 Duration Hours")
+    publish("spa/filter1durationhours/$datatype", "integer")
+    publish("spa/filter1durationhours/$format", "0:24")
+    publish("spa/filter1durationhours/$settable", "true")
+
+    publish("spa/filter1durationminutes/$name", "Filter Cycle 1 Duration Minutes")
+    publish("spa/filter1durationminutes/$datatype", "integer")
+    publish("spa/filter1durationminutes/$format", "0:59")
+    publish("spa/filter1durationminutes/$settable", "true")
+
+    publish("spa/filter2enabled/$name", "Filter Cycle 2 Enabled")
+    publish("spa/filter2enabled/$datatype", "boolean")
+    publish("spa/filter2enabled/$settable", "true")
+
+    publish("spa/filter2hour/$name", "Filter Cycle 2 Start Hour")
+    publish("spa/filter2hour/$datatype", "integer")
+    publish("spa/filter2hour/$format", "0:24")
+    publish("spa/filter2hour/$settable", "true")
+
+    publish("spa/filter2minute/$name", "Filter Cycle 2 Start Minutes")
+    publish("spa/filter2minute/$datatype", "integer")
+    publish("spa/filter2minute/$format", "0:59")
+    publish("spa/filter2minute/$settable", "true")
+
+    publish("spa/filter2durationhours/$name", "Filter Cycle 2 Duration Hours")
+    publish("spa/filter2durationhours/$datatype", "integer")
+    publish("spa/filter2durationhours/$format", "0:24")
+    publish("spa/filter2durationhours/$settable", "true")
+
+    publish("spa/filter2durationminutes/$name", "Filter Cycle 2 Duration Minutes")
+    publish("spa/filter2durationminutes/$datatype", "integer")
+    publish("spa/filter2durationminutes/$format", "0:59")
+    publish("spa/filter2durationminutes/$settable", "true")
+
+    subscribe("spa/filter1hour/set")
+    subscribe("spa/filter1minute/set")
+    subscribe("spa/filter1durationhours/set")
+    subscribe("spa/filter1durationminutes/set")
+    subscribe("spa/filter2enabled/set")
+    subscribe("spa/filter2hour/set")
+    subscribe("spa/filter2minute/set")
+    subscribe("spa/filter2durationhours/set")
+    subscribe("spa/filter2durationminutes/set")
+
+    @things.merge(["filter1hour,filter1minute,filter1durationhours,filter1durationminutes,filter2enabled,filter2hour,filter2minute,filter2durationhours,filter2durationminutes"])
+
+	publish_nodes
+  end
+
   def publish_nodes
-    publish("spa/$properties", (["priming,heatingmode,temperaturescale,24htime,heating,temperaturerange,currenttemperature,settemperature,filter1,filter2"] + @things.to_a).join(','))
+    publish("spa/$properties", (["hold,priming,heatingmode,temperaturescale,24htime,heating,temperaturerange,currenttemperature,settemperature,filter1,filter2"] + @things.to_a).join(','))
   end
 end
 
@@ -279,5 +362,6 @@ end
 spa = BWA::Client.new(spa_ip)
 
 spa.request_configuration
+spa.request_filter_configuration
 
 MQTTBridge.new(mqtt_uri, spa)

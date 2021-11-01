@@ -10,7 +10,7 @@ module BWA
       uri = URI.parse(uri)
       if uri.scheme == 'tcp'
         require 'socket'
-        @io = TCPSocket.new(uri.host, uri.port || 4217)
+        @io = TCPSocket.new(uri.host, uri.port || 4257)
       elsif uri.scheme == 'telnet' || uri.scheme == 'rfc2217'
         require 'net/telnet/rfc2217'
         @io = Net::Telnet::RFC2217.new("Host" => uri.host, "Port" => uri.port || 23, "baud" => 115200)
@@ -109,6 +109,10 @@ module BWA
       toggle_item(0x0c)
     end
 
+    def toggle_hold
+      toggle_item(0x3c)
+    end
+
     def set_pump(i, desired)
       return unless last_status && last_control_configuration2
       times = (desired - last_status.pumps[i - 1]) % (last_control_configuration2.pumps[i - 1] + 1)
@@ -143,9 +147,18 @@ module BWA
       end
     end
 
+    def set_hold(desired)
+	puts "in set_hold: " + desired.to_s
+      return unless last_status
+      return if last_status.hold == desired
+      toggle_hold
+    end
+
     # high range is 80-104 for F, 26-40 for C (by 0.5)
     # low range is 50-80 for F, 10-26 for C (by 0.5)
     def set_temperature(desired)
+      return unless last_status
+	  return if last_status.set_temperature == desired
       desired *= 2 if last_status && last_status.temperature_scale == :celsius || desired < 50
       send_message("\x0a\xbf\x20#{desired.round.chr}")
     end
@@ -159,6 +172,34 @@ module BWA
       raise ArgumentError, "scale must be :fahrenheit or :celsius" unless %I{fahrenheit :celsius}.include?(scale)
       arg = scale == :fahrenheit ? 0 : 1
       send_message("\x0a\xbf\x27\x01".force_encoding(Encoding::ASCII_8BIT) + arg.chr)
+    end
+
+    def set_filtercycles(changedItem, changedValue)
+      #changedItem - String name of item that was changed
+      #changedValue - String value of the item that changed
+      if @last_filter_configuration
+        messagedata = if changedItem == "filter1hour" then changedValue.to_i.chr else @last_filter_configuration.filter1_hour.chr end
+        messagedata += if changedItem == "filter1minute" then changedValue.to_i.chr else @last_filter_configuration.filter1_minute.chr end
+        messagedata += if changedItem == "filter1durationhours" then changedValue.to_i.chr else @last_filter_configuration.filter1_duration_hours.chr end
+        messagedata += if changedItem == "filter1durationminutes" then changedValue.to_i.chr else @last_filter_configuration.filter1_duration_minutes.chr end
+
+        #The filter2 start hour is merged with the filter2 enable (who thought that was a good idea?) The high order bit of the byte is a flag
+        #to indicate this so we have to do a bit of different processing to do that
+        #Get the filter 2 start hour
+        starthour =  if changedItem == "filter2hour" then changedValue.to_i else @last_filter_configuration.filter2_hour end
+        #Check to see if we want filter 2 enabled (either because it changed or from the current configuration)
+        #If it is something that changed, we have to convert to boolean, if it is from the current config it already is a boolean
+        starthour |=  0x80 if (if changedItem == "filter2enabled" then (changedValue == "true" ? true : false) else @last_filter_configuration.filter2_enabled end)
+
+        messagedata += starthour.chr
+
+        messagedata += if changedItem == "filter2minute" then changedValue.to_i.chr else @last_filter_configuration.filter2_minute.chr end
+        messagedata += if changedItem == "filter2durationhours" then changedValue.to_i.chr else @last_filter_configuration.filter2_duration_hours.chr end
+        messagedata += if changedItem == "filter2durationminutes" then changedValue.to_i.chr else @last_filter_configuration.filter2_duration_minutes.chr end
+
+        send_message("\x0a\xbf\x23".force_encoding(Encoding::ASCII_8BIT) + messagedata)
+      end
+	  request_filter_configuration
     end
 
     def toggle_temperature_range
