@@ -75,8 +75,8 @@ class MQTTBridge
               publish_attribute("spa/currenttemperature/$format", message.temperature_range == :high ? "26:40" : "10:26")
               publish_attribute("spa/settemperature/$format", message.temperature_range == :high ? "26:40" : "10:26")
             else
-              publish_attribute("spa/currenttemperature/$format", message.temperature_range == :high ? "80:104" : "26:40")
-              publish_attribute("spa/settemperature/$format", message.temperature_range == :high ? "80:104" : "26:40")
+              publish_attribute("spa/currenttemperature/$format", message.temperature_range == :high ? "80:104" : "50:99")
+              publish_attribute("spa/settemperature/$format", message.temperature_range == :high ? "80:104" : "50:90")
             end
             publish_attribute("spa/filter1", message.filter[0])
             publish_attribute("spa/filter2", message.filter[1])
