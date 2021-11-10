@@ -1,5 +1,6 @@
 require 'uri'
 
+require 'bwa/logger'
 require 'bwa/message'
 
 module BWA
@@ -20,6 +21,7 @@ module BWA
         @io = CCutrer::SerialPort.new(uri.path, baud: 115200)
         @queue = []
       end
+      @src = 0x0a
       @buffer = ""
     end
 
@@ -43,7 +45,7 @@ module BWA
       end
 
       if message.is_a?(Messages::Ready) && (msg = @queue&.shift)
-        puts "wrote #{msg.unpack('H*').first}"
+        BWA.logger.debug "wrote: #{BWA.raw2str(msg)}" unless BWA.verbosity < 1 && msg[3..4] == Messages::ControlConfigurationRequest::MESSAGE_TYPE
         @io.write(msg)
       end
       @last_status = message.dup if message.is_a?(Messages::Status)
@@ -62,35 +64,35 @@ module BWA
     end
 
     def send_message(message)
-      length = message.length + 2
-      full_message = "#{length.chr}#{message}".force_encoding(Encoding::ASCII_8BIT)
-      checksum = CRC.checksum(full_message)
-      full_message = "\x7e#{full_message}#{checksum.chr}\x7e".force_encoding(Encoding::ASCII_8BIT)
+      message.src = @src
+      BWA.logger.info "  to spa: #{message.inspect}" unless BWA.verbosity < 1 && message.is_a?(Messages::ControlConfigurationRequest)
+      full_message = message.serialize
       if @queue
         @queue.push(full_message)
       else
+        BWA.logger.debug "wrote: #{BWA.raw2str(full_message)}" unless BWA.verbosity < 1 && message.is_a?(Messages::ControlConfigurationRequest)
         @io.write(full_message)
       end
     end
 
     def request_configuration
-      send_message("\x0a\xbf\x04")
+      send_message(Messages::ConfigurationRequest.new)
     end
 
     def request_control_info2
-      send_message("\x0a\xbf\x22\x00\x00\x01")
+      send_message(Messages::ControlConfigurationRequest.new(2))
     end
 
     def request_control_info
-      send_message("\x0a\xbf\x22\x02\x00\x00")
+      send_message(Messages::ControlConfigurationRequest.new(1))
     end
 
     def request_filter_configuration
-      send_message("\x0a\xbf\x22\x01\x00\x00")
+      send_message(Messages::ControlConfigurationRequest.new(3))
     end
 
     def toggle_item(item)
-      send_message("\x0a\xbf\x11#{item.chr}\x00")
+      send_message(Messages::ToggleItem.new(item))
     end
 
     def toggle_pump(i)
@@ -102,15 +104,15 @@ module BWA
     end
 
     def toggle_mister
-      toggle_item(0x0e)
+      toggle_item(:mister)
     end
 
     def toggle_blower
-      toggle_item(0x0c)
+      toggle_item(:blower)
     end
 
     def toggle_hold
-      toggle_item(0x3c)
+      toggle_item(:hold)
     end
 
     def set_pump(i, desired)
@@ -160,18 +162,16 @@ module BWA
       return if last_status.set_temperature == desired
 
       desired *= 2 if last_status && last_status.temperature_scale == :celsius || desired < 50
-      send_message("\x0a\xbf\x20#{desired.round.chr}")
+      send_message(Messages::SetTemperature.new(desired.round))
     end
 
     def set_time(hour, minute, twenty_four_hour_time = false)
-      hour |= 0x80 if twenty_four_hour_time
-      send_message("\x0a\xbf\x21".force_encoding(Encoding::ASCII_8BIT) + hour.chr + minute.chr)
+      send_message(Messages::SetTime.new(hour, minute, twenty_four_hour_time))
     end
 
     def set_temperature_scale(scale)
       raise ArgumentError, "scale must be :fahrenheit or :celsius" unless %I{fahrenheit :celsius}.include?(scale)
-      arg = scale == :fahrenheit ? 0 : 1
-      send_message("\x0a\xbf\x27\x01".force_encoding(Encoding::ASCII_8BIT) + arg.chr)
+      send_message(Messages::SetTemperatureScale.new(scale))
     end
 
     def set_filtercycles(changedItem, changedValue)
@@ -213,7 +213,7 @@ module BWA
     end
 
     def toggle_heating_mode
-      toggle_item(0x51)
+      toggle_item(:heating_mode)
     end
 
     HEATING_MODES = %I{ready rest ready_in_rest}.freeze

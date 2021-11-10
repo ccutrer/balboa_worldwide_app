@@ -7,6 +7,7 @@ module BWA
       attr_accessor :model, :version
 
       def initialize
+        super
         @model = ''
         @version = 0
       end

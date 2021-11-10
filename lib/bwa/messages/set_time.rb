@@ -7,6 +7,7 @@ module BWA
       attr_accessor :hour, :minute, :twenty_four_hour_time
 
       def initialize(hour = nil, minute = nil, twenty_four_hour_time = nil)
+        super()
         self.hour, self.minute, self.twenty_four_hour_time = hour, minute, twenty_four_hour_time
       end
 

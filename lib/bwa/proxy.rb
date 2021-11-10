@@ -1,4 +1,5 @@
 require 'socket'
+require 'bwa/logger'
 require 'bwa/message'
 
 module BWA
@@ -44,9 +45,9 @@ module BWA
         leftover_data = leftover_data[(data_length + 2)..-1] || ''
         begin
           message = Message.parse(data)
-          puts "#{tag}: #{message.inspect}"
+          BWA.logger.info "#{tag}: #{message.inspect}"
         rescue InvalidMessage => e
-          puts "#{tag}: #{e}"
+          BWA.logger.info "#{tag}: #{e}"
         end
         socket2.send(data, 0)
       end
