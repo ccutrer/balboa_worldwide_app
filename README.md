@@ -122,6 +122,7 @@ These projects are all in various states, and may be more or less developed than
  * https://github.com/garbled1/pybalboa/ - Python library
  * https://github.com/plmilord/Hass.io-custom-component-spaclient = Hass.io integration
  * https://github.com/MHotchin/BalboaSpaComms - C++/Windows
+ * https://github.com/jshank/bwalink - A Docker container hosting the Balboa Worldwide App gem and socat for remote access to a serial to IP device
 
 ## Thanks
 
