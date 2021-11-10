@@ -3,6 +3,7 @@
 require 'mqtt'
 require 'sd_notify'
 require 'set'
+require 'json'
 
 require 'bwa/client'
 require 'bwa/discovery'
@@ -16,8 +17,37 @@ class MQTTBridge
     @bwa = bwa
     @attributes = {}
     @things = Set.new
+    if ENV["HASS_ENABLED"] == "true"
+      @hass_enabled = true
+    end
+
+
+    hass_discovery_topic = "homeassistant/"
+    @ha_binary_path = hass_discovery_topic + "binary_sensor/"
+    @ha_sensor_path = hass_discovery_topic + "sensor/"
+    @ha_switch_path = hass_discovery_topic + "switch/"
+    @ha_selects_path = hass_discovery_topic + "select/"
+    @ha_number_path = hass_discovery_topic + "number/"
+
+    @hass_device = {
+      "device" => {
+        "identifiers" => ["spa_CL501X1"],
+        "sw_version" => "2021.11",
+        "name" => "BWA Link"
+      }
+    }
+
+    # bwa availability topics (works for all devices)
+    @hass_availability = {
+      "availability_topic" => "homie/bwa/$state",
+      "payload_available" => "ready",
+      "payload_not_available" => "lost"
+    }
 
     publish_basic_attributes
+
+    # Home Assistant MQTT Discovery Section
+    publish_hass_discovery if @hass_enabled
 
     # Tell systemd we've started up OK. Ignored if systemd not in use.
     SdNotify.ready
@@ -74,9 +104,11 @@ class MQTTBridge
             if message.temperature_scale == :celsius
               publish_attribute("spa/currenttemperature/$format", message.temperature_range == :high ? "26:40" : "10:26")
               publish_attribute("spa/settemperature/$format", message.temperature_range == :high ? "26:40" : "10:26")
+              publish_hass_discovery_settemp(:celsius) if @hass_enabled
             else
-              publish_attribute("spa/currenttemperature/$format", message.temperature_range == :high ? "80:104" : "26:40")
-              publish_attribute("spa/settemperature/$format", message.temperature_range == :high ? "80:104" : "26:40")
+              publish_attribute("spa/currenttemperature/$format", message.temperature_range == :high ? "80:104" : "50:99")
+              publish_attribute("spa/settemperature/$format", message.temperature_range == :high ? "80:104" : "50:99")
+              publish_hass_discovery_settemp(:fahrenheit) if @hass_enabled
             end
             publish_attribute("spa/filter1", message.filter[0])
             publish_attribute("spa/filter2", message.filter[1])
@@ -154,6 +186,216 @@ class MQTTBridge
     @mqtt.subscribe("#{@base_topic}/#{topic}")
   end
 
+  def publish_hass_discovery()
+    #Priming
+    priming_config = {
+      "name" => "Hot Tub Priming",
+      "state_topic" => "homie/bwa/spa/priming",
+      "device_class" => "running",
+      "unique_id" => "spa_priming",
+      "icon" => "mdi:fast-forward"
+    }
+    @mqtt.publish(@ha_binary_path + "priming/config", priming_config
+      .merge(@hass_device)
+      .merge(@hass_availability)
+      .to_json, true)
+
+    #Circulation Pump
+    circ_config = {
+      "name" => "Hot Tub Circulation Pump",
+      "state_topic" => "homie/bwa/spa/circpump",
+      "device_class" => "running",
+      "unique_id" => "spa_circpump",
+      "icon" => "mdi:sync"
+    }
+    @mqtt.publish(@ha_binary_path + "circpump/config", circ_config
+      .merge(@hass_device)
+      .merge(@hass_availability)
+      .to_json, true)
+
+    # Filter 1 Cycle Running
+    filter1_config = {
+      "name" => "Hot Tub Filter 1 Cycle Running",
+      "state_topic" => "homie/bwa/spa/filter1",
+      "device_class" => "running",
+      "unique_id" => "spa_filtercycle1",
+      "icon" => "mdi:air-filter"
+    }
+    @mqtt.publish(@ha_binary_path + "filter1/config", filter1_config
+      .merge(@hass_device)
+      .merge(@hass_availability)
+      .to_json, true)
+
+    # Filter 2 Cycle Running
+    filter2_config = {
+      "name" => "Hot Tub Filter 2 Cycle Running",
+      "state_topic" => "homie/bwa/spa/filter2",
+      "device_class" => "running",
+      "unique_id" => "spa_filtercycle2",
+      "icon" => "mdi:air-filter"
+    }
+    @mqtt.publish(@ha_binary_path + "filter2/config", filter2_config
+      .merge(@hass_device)
+      .merge(@hass_availability)
+      .to_json, true)
+
+    # Heater Running
+    heater_config = {
+      "name" => "Hot Tub Heater",
+      "state_topic" => "homie/bwa/spa/heating",
+      "device_class" => "running",
+      "unique_id" => "spa_heating",
+      "icon" => "mdi:hot-tub"
+    }
+    @mqtt.publish(@ha_binary_path + "heating/config", heater_config
+      .merge(@hass_device)
+      .merge(@hass_availability)
+      .to_json, true)
+
+    # Heating Mode
+    heatingmode_config = {
+      "name" => "Hot Tub Heating Mode",
+      "state_topic" => "homie/bwa/spa/heatingmode",
+      "command_topic" => "homie/bwa/spa/heatingmode/set",
+      "unique_id" => "spa_heating_mode",
+      "options" => ["ready","rest","ready_in_rest"],
+      "icon" => "mdi:cog-play"
+    }
+    @mqtt.publish(@ha_selects_path + "heatingmode/config", heatingmode_config
+      .merge(@hass_device)
+      .merge(@hass_availability)
+      .to_json, true)
+
+    # Temperature Range
+    temperaturerange_config = {
+      "name" => "Hot Tub Temperature Range",
+      "state_topic" => "homie/bwa/spa/temperaturerange",
+      "command_topic" => "homie/bwa/spa/temperaturerange/set",
+      "unique_id" => "spa_temperaturerange_range",
+      "options" => ["high","low"],
+      "icon" => "mdi:thermometer-lines"
+    }
+    @mqtt.publish(@ha_selects_path + "temperaturerange/config", temperaturerange_config
+      .merge(@hass_device)
+      .merge(@hass_availability)
+      .to_json, true)
+
+    # Temperature Scale
+    temperaturescale_config = {
+      "name" => "Hot Tub Temperature Scale",
+      "state_topic" => "homie/bwa/spa/temperaturescale",
+      "unique_id" => "spa_temperaturescale"
+    }
+    @mqtt.publish(@ha_sensor_path + "temperaturescale/config", temperaturescale_config
+      .merge(@hass_device)
+      .merge(@hass_availability)
+      .to_json, true)
+
+    # Current Temperature
+    currenttemperature_config = {
+      "name" => "Hot Tub Current Temperature",
+      "state_topic" => "homie/bwa/spa/currenttemperature",
+      "unique_id" => "spa_currenttemperature",
+      "device_class" => "temperature"
+    }
+    @mqtt.publish(@ha_sensor_path + "currenttemperature/config", currenttemperature_config
+      .merge(@hass_device)
+      .merge(@hass_availability)
+      .to_json, true)
+
+    # Set Temperature - Assuming fahrenheit first
+    settemperature_config = {
+      "name" => "Hot Tub Set Temperature",
+      "unique_id" => "spa_settemperature",
+      "state_topic" => "homie/bwa/spa/settemperature",
+      "command_topic" => "homie/bwa/spa/settemperature/set",
+      "min" => 50,
+      "max" => 104,
+      "unit_of_measurement" => "°F",
+      "icon" => "mdi:thermometer"
+    }
+    @mqtt.publish(@ha_number_path + "settemperature/config", settemperature_config
+      .merge(@hass_device)
+      .merge(@hass_availability)
+      .to_json, true)
+  end
+
+  def publish_hass_discovery_settemp(scale)
+    # Update temp ranges when scale changes
+    settemperature_config = {
+      "name" => "Hot Tub Set Temperature",
+      "unique_id" => "spa_settemperature",
+      "state_topic" => "homie/bwa/spa/settemperature",
+      "command_topic" => "homie/bwa/spa/settemperature/set",
+      "min" => 50,
+      "max" => 104,
+      "unit_of_measurement" => "°F",
+      "icon" => "mdi:thermometer"
+    }
+
+    if scale == :celsius
+      settemperature_config["min"] = 10
+      settemperature_config["max"] = 40
+      settemperature_config["unit_of_measurement"] = "°C"
+    else
+      settemperature_config["min"] = 50
+      settemperature_config["max"] = 104
+      settemperature_config["unit_of_measurement"] = "°F"
+    end
+
+    @mqtt.publish(@ha_number_path + "settemperature/config", settemperature_config
+      .merge(@hass_device)
+      .merge(@hass_availability)
+      .to_json, true)
+  end
+
+  def publish_hass_discovery_pumps(i, speeds)
+    #Pump
+    # This tries to work around the "toggle" logic
+    # "options" => ("0".."#{speeds}").to_a,
+    pump_config = {
+      "name" => "Hot Tub Pump #{i}",
+      "unique_id" => "spa_pump#{i}",
+      "state_topic" => "homie/bwa/spa/pump#{i}",
+      "command_topic" => "homie/bwa/spa/pump#{i}/set",
+      "payload_on" => "toggle",
+      "payload_off" => "toggle",
+      "state_on" => "2",
+      "state_off" => "0",
+      "icon" => "mdi:chart-bubble"
+    }
+    @mqtt.publish(@ha_switch_path + "pump#{i}/config", pump_config
+      .merge(@hass_device)
+      .merge(@hass_availability)
+      .to_json, true)
+  end
+
+  def publish_hass_discovery_things(type, i)
+    #Things - Lights and such
+    thing_config = {
+      "name" => "Hot Tub #{type} #{i}",
+      "unique_id" => "spa_#{type}#{i}",
+      "state_topic" => "homie/bwa/spa/#{type}#{i}",
+      "command_topic" => "homie/bwa/spa/#{type}#{i}/set",
+      "payload_on" => "true",
+      "payload_off" => "false",
+      "state_on" => "true",
+      "state_off" => "false"
+    }
+    case type
+    when "light"
+      thing_config["icon"] = "mdi:car-parking-lights"
+    when "mister"
+      thing_config["icon"] = "mdi:sprinkler-fire"
+    when "blower"
+      thing_config["icon"] = "mdi:chart-bubble"
+    end
+    @mqtt.publish(@ha_switch_path+ "#{type}#{i}/config", thing_config
+      .merge(@hass_device)
+      .merge(@hass_availability)
+      .to_json, true)
+  end
+
   def publish_basic_attributes
     publish("$homie", "4.0.0")
     publish("$name", "BWA Spa")
@@ -216,6 +458,7 @@ class MQTTBridge
     subscribe("spa/pump#{i}/set")
 
     @things << "pump#{i}"
+    publish_hass_discovery_pumps(i, speeds) if @hass_enabled
     publish_nodes
   end
 
@@ -226,6 +469,7 @@ class MQTTBridge
     subscribe("spa/#{type}#{i}/set")
 
     @things << "#{type}#{i}"
+    publish_hass_discovery_things(type, i) if @hass_enabled
     publish_nodes
   end
 
