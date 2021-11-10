@@ -96,6 +96,10 @@ Frame label="Hot Tub" {
     Text item=HotTubHeaterActive_Switch
 }
 ```
+## Home Assistant Integration
+Home Assistant MQTT integration is enabled through the environmental variable `HASS_ENABLED=true` or by editing [bin/bwa_mqtt_bridge](bin/bwa_mqtt_bridge) and setting `@hass_enabled = true`. Once enabled, this gem will publish all of the BWA sensors and controls to Home Assistant and create a **BWA Link** device.
+
+![BWA Link Device in Home Assistant](doc/home_assistant_device.png)
 
 ## Using RS-485 for a direct connection
 
