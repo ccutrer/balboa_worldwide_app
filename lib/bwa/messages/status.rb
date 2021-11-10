@@ -1,7 +1,8 @@
 module BWA
   module Messages
     class Status < Message
-      attr_accessor :priming,
+      attr_accessor :hold,
+                    :priming,
                     :heating_mode,
                     :temperature_scale,
                     :twenty_four_hour_time,
@@ -23,6 +24,7 @@ module BWA
 
       def initialize
         @src = 0xff
+        self.hold = false
         self.priming = false
         self.heating_mode = :ready
         @temperature_scale = :fahrenheit
@@ -40,6 +42,9 @@ module BWA
       end
 
       def parse(data)
+        flags = data[0].ord
+        self.hold = (flags & 0x05 != 0 )
+
         flags = data[1].ord
         self.priming = (flags & 0x01 == 0x01)
         flags = data[5].ord
@@ -88,6 +93,7 @@ module BWA
 
       def serialize
         data = "\x00" * 24
+        data[0] = (hold ? 0x05 : 0x00).chr
         data[1] = (priming ? 0x01 : 0x00).chr
         data[5] = (case heating_mode
                      when :ready; 0x00
@@ -118,7 +124,7 @@ module BWA
           data[2] = (current_temperature ? (current_temperature * 2).to_i : 0xff).chr
           data[20] = (set_temperature * 2).to_i.chr
         else
-          data[2] = (current_temperature&.to_i || 0xff).chr
+          data[2] = (current_temperature.to_i || 0xff).chr
           data[20] = set_temperature.to_i.chr
         end
 
@@ -154,6 +160,7 @@ module BWA
         result = "#<BWA::Messages::Status "
         items = []
 
+        items << "hold" if hold
         items << "priming" if priming
         items << self.class.format_time(hour, minute, twenty_four_hour_time)
         items << "#{current_temperature || '--'}/#{set_temperature}º#{temperature_scale.to_s[0].upcase}"
