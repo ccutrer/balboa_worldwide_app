@@ -19,17 +19,13 @@ class MQTTBridge
     @bwa = bwa
     @attributes = {}
     @things = Set.new
-
-    hass_discovery_topic = "homeassistant/"
-    @ha_binary_path = hass_discovery_topic + "binary_sensor/"
-    @ha_sensor_path = hass_discovery_topic + "sensor/"
-    @ha_switch_path = hass_discovery_topic + "switch/"
-    @ha_selects_path = hass_discovery_topic + "select/"
-    @ha_number_path = hass_discovery_topic + "number/"
+    @hass_discovery_topic = "homeassistant/"
+    @device_id = device_id
 
     @hass_device = {
       device: {
         identifiers: [device_id],
+        manufacturer: "Balboa MQTT Bridge",
         sw_version: BWA::VERSION,
         name: "BWA Link"
       }
@@ -61,6 +57,7 @@ class MQTTBridge
           case message
           when BWA::Messages::ControlConfiguration
             publish("spa/$type", message.model)
+            update_hass_devicemodel(message.model)
           when BWA::Messages::ControlConfiguration2
             message.pumps.each_with_index do |speed, i|
               publish_pump(i + 1, speed) if speed != 0
@@ -207,210 +204,175 @@ class MQTTBridge
   end
 
   def publish_hass_discovery()
-    #Priming
-    priming_config = {
-      name: "Hot Tub Priming",
-      state_topic: "#{@base_topic}/spa/priming",
-      device_class: "running",
-      unique_id: "spa_priming",
-      icon: "mdi:fast-forward"
-    }
-    @mqtt.publish(@ha_binary_path + "priming/config", priming_config
-      .merge(@hass_device)
-      .merge(@hass_availability)
-      .to_json, true)
+    publish_hass_binarysensor(name: "Priming", subtopic: "priming", 
+      device_class: "running", icon: "mdi:fast-forward")
+      
+    publish_hass_binarysensor(name: "Circulation Pump", subtopic: "circpump", 
+      device_class: "running", icon: "mdi:sync")
 
-    #Circulation Pump
-    circ_config = {
-      name: "Hot Tub Circulation Pump",
-      state_topic: "#{@base_topic}/spa/circpump",
-      device_class: "running",
-      unique_id: "spa_circpump",
-      icon: "mdi:sync"
-    }
-    @mqtt.publish(@ha_binary_path + "circpump/config", circ_config
-      .merge(@hass_device)
-      .merge(@hass_availability)
-      .to_json, true)
+    publish_hass_binarysensor(name: "Filter 1 Cycle Running", subtopic: "filter1", 
+      device_class: "running", icon:  "mdi:air-filter")
 
-    # Filter 1 Cycle Running
-    filter1_config = {
-      name: "Hot Tub Filter 1 Cycle Running",
-      state_topic: "#{@base_topic}/spa/filter1",
-      device_class: "running",
-      unique_id: "spa_filtercycle1",
-      icon: "mdi:air-filter"
-    }
-    @mqtt.publish(@ha_binary_path + "filter1/config", filter1_config
-      .merge(@hass_device)
-      .merge(@hass_availability)
-      .to_json, true)
+    publish_hass_binarysensor(name: "Filter 2 Cycle Running", subtopic: "filter2", 
+      device_class: "running", icon:  "mdi:air-filter")
 
-    # Filter 2 Cycle Running
-    filter2_config = {
-      name: "Hot Tub Filter 2 Cycle Running",
-      state_topic: "#{@base_topic}/spa/filter2",
-      device_class: "running",
-      unique_id: "spa_filtercycle2",
-      icon: "mdi:air-filter"
-    }
-    @mqtt.publish(@ha_binary_path + "filter2/config", filter2_config
-      .merge(@hass_device)
-      .merge(@hass_availability)
-      .to_json, true)
+    publish_hass_binarysensor(name: "Heater", subtopic: "heating", 
+      device_class: "running", icon:  "mdi:hot-tub")
 
-    # Heater Running
-    heater_config = {
-      name: "Hot Tub Heater",
-      state_topic: "#{@base_topic}/spa/heating",
-      device_class: "running",
-      unique_id: "spa_heating",
-      icon: "mdi:hot-tub"
-    }
-    @mqtt.publish(@ha_binary_path + "heating/config", heater_config
-      .merge(@hass_device)
-      .merge(@hass_availability)
-      .to_json, true)
+    publish_hass_select(name: "Heating Mode", subtopic: "heatingmode", 
+      options: ["ready","rest","ready_in_rest"], icon: "mdi:cog-play")
 
-    # Heating Mode
-    heatingmode_config = {
-      name: "Hot Tub Heating Mode",
-      state_topic: "#{@base_topic}/spa/heatingmode",
-      command_topic: "#{@base_topic}/spa/heatingmode/set",
-      unique_id: "spa_heating_mode",
-      options: ["ready","rest","ready_in_rest"],
-      icon: "mdi:cog-play"
-    }
-    @mqtt.publish(@ha_selects_path + "heatingmode/config", heatingmode_config
-      .merge(@hass_device)
-      .merge(@hass_availability)
-      .to_json, true)
+    publish_hass_select(name: "Temperature Range", subtopic: "temperaturerange", 
+      options:["high","low"], icon: "mdi:thermometer-lines")
 
-    # Temperature Range
-    temperaturerange_config = {
-      name: "Hot Tub Temperature Range",
-      state_topic: "#{@base_topic}/spa/temperaturerange",
-      command_topic: "#{@base_topic}/spa/temperaturerange/set",
-      unique_id: "spa_temperaturerange_range",
-      options: ["high","low"],
-      icon: "mdi:thermometer-lines"
-    }
-    @mqtt.publish(@ha_selects_path + "temperaturerange/config", temperaturerange_config
-      .merge(@hass_device)
-      .merge(@hass_availability)
-      .to_json, true)
+    publish_hass_sensor(name: "Temperature Scale", subtopic: "temperaturescale")
 
-    # Temperature Scale
-    temperaturescale_config = {
-      name: "Hot Tub Temperature Scale",
-      state_topic: "#{@base_topic}/spa/temperaturescale",
-      unique_id: "spa_temperaturescale"
-    }
-    @mqtt.publish(@ha_sensor_path + "temperaturescale/config", temperaturescale_config
-      .merge(@hass_device)
-      .merge(@hass_availability)
-      .to_json, true)
+    publish_hass_sensor(name: "Current Temperature", subtopic: "currenttemperature",
+       device_class: "temperature", icon: "mdi:thermometer", unit_of_measurement: "°F")
 
-    # Current Temperature
-    currenttemperature_config = {
-      name: "Hot Tub Current Temperature",
-      state_topic: "#{@base_topic}/spa/currenttemperature",
-      unique_id: "spa_currenttemperature",
-      device_class: "temperature"
-    }
-    @mqtt.publish(@ha_sensor_path + "currenttemperature/config", currenttemperature_config
-      .merge(@hass_device)
-      .merge(@hass_availability)
-      .to_json, true)
+    publish_hass_number(name: "Set Temperature", min: 50, max: 106, subtopic: "settemperature",
+       icon: "mdi:thermometer", unit_of_measurement: "°F")
 
-    # Set Temperature - Assuming fahrenheit first
-    settemperature_config = {
-      name: "Hot Tub Set Temperature",
-      unique_id: "spa_settemperature",
-      state_topic: "#{@base_topic}/spa/settemperature",
-      command_topic: "#{@base_topic}/spa/settemperature/set",
-      min: 50,
-      max: 106,
-      unit_of_measurement: "°F",
-      icon: "mdi:thermometer"
-    }
-    @mqtt.publish(@ha_number_path + "settemperature/config", settemperature_config
-      .merge(@hass_device)
-      .merge(@hass_availability)
-      .to_json, true)
+    publish_hass_switch(name: "in Hold Mode", subtopic: "hold", 
+      icon: "mdi:pause-octagon")
+
+    publish_hass_switch(name: "Clock is 24 hour time", subtopic: "24htime", 
+      icon: "mdi:timer-cog")  
   end
 
   def publish_hass_discovery_settemp(scale)
     return if scale == @last_scale
     @last_scale = scale
 
-    # Update temp ranges when scale changes
-    settemperature_config = {
-      name: "Hot Tub Set Temperature",
-      unique_id: "spa_settemperature",
-      state_topic: "#{@base_topic}/spa/settemperature",
-      command_topic: "#{@base_topic}/spa/settemperature/set",
-      min: 50,
-      max: 106,
-      unit_of_measurement: "°F",
-      icon: "mdi:thermometer"
-    }
+    # Update temp ranges and measurement unit when scale changes
+   if scale == :celsius
+      publish_hass_number(name: "Set Temperature", min: 10, max: 40, subtopic: "settemperature", 
+        icon: "mdi:thermometer", unit_of_measurement: "°C")
 
-    if scale == :celsius
-      settemperature_config[:min] = 10
-      settemperature_config[:max] = 40
-      settemperature_config[:unit_of_measurement] = "°C"
+      publish_hass_sensor(name: "Current Temperature", subtopic: "currenttemperature", 
+        icon: "mdi:thermometer", unit_of_measurement: "°C")
     else
-      settemperature_config[:min] = 50
-      settemperature_config[:max] = 106
-      settemperature_config[:unit_of_measurement] = "°F"
+      publish_hass_number(name: "Set Temperature", min: 50, max: 106, subtopic: "settemperature", 
+        icon: "mdi:thermometer", unit_of_measurement: "°F")
+      
+      publish_hass_sensor(name: "Current Temperature", subtopic: "currenttemperature", 
+        icon: "mdi:thermometer", unit_of_measurement: "°F")
     end
-
-    @mqtt.publish(@ha_number_path + "settemperature/config", settemperature_config
-      .merge(@hass_device)
-      .merge(@hass_availability)
-      .to_json, true)
   end
 
   def publish_hass_discovery_pumps(i, speeds)
-    pump_config = {
-      name: "Hot Tub Pump #{i}",
-      unique_id: "spa_pump#{i}",
-      state_topic: "#{@base_topic}/spa/pump#{i}",
-      command_topic: "#{@base_topic}/spa/pump#{i}/set",
-      payload_on: "toggle",
-      payload_off: "toggle",
-      state_on: "2",
-      state_off: "0",
-      icon: "mdi:chart-bubble"
-    }
-    @mqtt.publish(@ha_switch_path + "pump#{i}/config", pump_config
-      .merge(@hass_device)
-      .merge(@hass_availability)
-      .to_json, true)
+    publish_hass_switch(name: "Pump #{i}", subtopic: "pump#{i}", payload_on: "toggle", payload_off: "toggle", 
+      state_on: "2", state_off: "0",icon: "mdi:chart-bubble")
   end
 
   def publish_hass_discovery_things(type, i)
     #Things - Lights and such
-    thing_config = {
-      name: "Hot Tub #{type} #{i}",
-      unique_id: "spa_#{type}#{i}",
-      state_topic: "#{@base_topic}/spa/#{type}#{i}",
-      command_topic: "#{@base_topic}/spa/#{type}#{i}/set",
-      payload_on: "true",
-      payload_off: "false",
-      state_on: "true",
-      state_off: "false"
-    }
     case type
     when :light
-      thing_config[:icon] = "mdi:car-parking-lights"
+      publish_hass_switch(name: "#{type} #{i}", subtopic: "#{type}#{i}", icon: "mdi:car-parking-lights")
     when :mister
-      thing_config[:icon] = "mdi:sprinkler-fire"
+      publish_hass_switch(name: "#{type} #{i}", subtopic: "#{type}#{i}", icon: "mdi:sprinkler-fire")
     when :blower
-      thing_config[:icon] = "mdi:chart-bubble"
+      publish_hass_switch(name: "#{type} #{i}", subtopic: "#{type}#{i}", icon: "mdi:chart-bubble")
     end
-    @mqtt.publish(@ha_switch_path+ "#{type}#{i}/config", thing_config
+  end
+
+  def update_hass_devicemodel(model)
+    return if model == @last_model
+    @last_model = model
+    @hass_device[:device][:model] = model
+  end
+
+  def publish_hass_number(name:, subtopic:, min: nil, max: nil, icon: nil, unit_of_measurement: nil)
+    ha_number_path = @hass_discovery_topic + "number/" + @device_id + "/"
+
+    device_config = {
+      name: "Hot Tub #{name}",
+      unique_id: "spa_#{subtopic}",
+      state_topic: "#{@base_topic}/spa/#{subtopic}",
+      command_topic: "#{@base_topic}/spa/#{subtopic}/set",
+    }
+    device_config[:min] = min unless min.nil?
+    device_config[:max] = max unless max.nil?
+    device_config[:unit_of_measurement] = unit_of_measurement unless unit_of_measurement.nil?
+    device_config[:icon] = icon unless icon.nil?
+
+    @mqtt.publish(ha_number_path + "#{subtopic}/config", device_config
+      .merge(@hass_device)
+      .merge(@hass_availability)
+      .to_json, true)
+  end
+
+  def publish_hass_switch(name:, subtopic:, payload_on: "true", payload_off: "false", state_on: "true", state_off: "false",icon: nil)
+    device_config = {
+      name: "Hot Tub #{name}",
+      unique_id: "spa_#{subtopic}",
+      state_topic: "#{@base_topic}/spa/#{subtopic}",
+      command_topic: "#{@base_topic}/spa/#{subtopic}/set",
+      payload_on: payload_on,
+      payload_off: payload_off,
+      state_on: state_on,
+      state_off: state_off
+    }
+
+    device_config[:icon] = icon unless icon.nil?
+
+    ha_switch_path = @hass_discovery_topic + "switch/" + @device_id + "/"
+
+    @mqtt.publish(ha_switch_path+ "#{subtopic}/config", device_config
+      .merge(@hass_device)
+      .merge(@hass_availability)
+      .to_json, true)
+  end
+
+  def publish_hass_binarysensor(name:, subtopic:, device_class:, icon:)
+    device_config = {
+      name: "Hot Tub #{name}",
+      unique_id: "spa_#{subtopic}",
+      state_topic: "#{@base_topic}/spa/#{subtopic}",
+      device_class: device_class,
+      icon: icon
+    }
+
+    ha_binary_path = @hass_discovery_topic + "binary_sensor/" + @device_id + "/"
+
+    @mqtt.publish(ha_binary_path + "#{subtopic}/config", device_config
+      .merge(@hass_device)
+      .merge(@hass_availability)
+      .to_json, true)
+  end
+
+  def publish_hass_select(name:, subtopic:, options:, icon:)
+    device_config = {
+      name: "Hot Tub #{name}",
+      unique_id: "spa_#{subtopic}",
+      state_topic: "#{@base_topic}/spa/#{subtopic}",
+      command_topic: "#{@base_topic}/spa/#{subtopic}/set",
+      options: options,
+      icon: icon
+    }
+
+    ha_select_path = @hass_discovery_topic + "select/" + @device_id + "/"
+
+    @mqtt.publish(ha_select_path+ "#{subtopic}/config", device_config
+      .merge(@hass_device)
+      .merge(@hass_availability)
+      .to_json, true)
+  end
+
+  def publish_hass_sensor(name:, subtopic:, device_class: nil, icon: nil, unit_of_measurement: nil)
+    device_config = {
+      name: "Hot Tub #{name}",
+      unique_id: "spa_#{subtopic}",
+      state_topic: "#{@base_topic}/spa/#{subtopic}"
+    }
+    device_config[:device_class] = device_class unless device_class.nil?
+    device_config[:unit_of_measurement] = unit_of_measurement unless unit_of_measurement.nil?
+    device_config[:icon] = icon unless icon.nil?
+
+    ha_sensor_path = @hass_discovery_topic + "sensor/" + @device_id + "/"
+
+    @mqtt.publish(ha_sensor_path + "#{subtopic}/config", device_config
       .merge(@hass_device)
       .merge(@hass_availability)
       .to_json, true)
@@ -584,6 +546,7 @@ class MQTTBridge
 
     @things.merge(["filter1hour,filter1minute,filter1durationhours,filter1durationminutes,filter2enabled,filter2hour,filter2minute,filter2durationhours,filter2durationminutes"])
 
+    publish_hass_filters
     publish_nodes
   end
 
