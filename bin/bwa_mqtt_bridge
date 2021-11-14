@@ -82,6 +82,7 @@ class MQTTBridge
             publish_attribute("spa/filter2minute",message.filter2_minute)
             publish_attribute("spa/filter2durationhours",message.filter2_duration_hours)
             publish_attribute("spa/filter2durationminutes",message.filter2_duration_minutes)
+            publish_hass_filters
           when BWA::Messages::Status
             @bwa.request_control_info unless @bwa.last_control_configuration
             @bwa.request_control_info2 unless @bwa.last_control_configuration2
@@ -282,6 +283,30 @@ class MQTTBridge
     @last_model = model
     @hass_device[:device][:model] = model
   end
+
+  def publish_hass_filters
+      # filter1 
+      publish_hass_number(name: "Filter 1 Hour", min: 0, max: 23, 
+        subtopic: "filter1hour", icon: "mdi:clock")
+      publish_hass_number(name: "Filter 1 Minute", min: 0, max: 59, 
+        subtopic: "filter1minute", icon: "mdi:clock")
+      publish_hass_number(name: "Filter 1 Duration Hours", min: 0, max: 23, 
+        subtopic: "filter1durationhours", icon: "mdi:clock")
+      publish_hass_number(name: "Filter 1 Duration Minutes", min: 0, max: 59, 
+        subtopic: "filter1durationminutes", icon: "mdi:clock")
+
+      # filter2
+      publish_hass_number(name: "Filter 2 Hour", min: 0, max: 23, 
+        subtopic: "filter2hour", icon: "mdi:clock")
+      publish_hass_number(name: "Filter 2 Minute", min: 0, max: 59, 
+        subtopic: "filter2minute", icon: "mdi:clock")
+      publish_hass_number(name: "Filter 2 Duration Hours", min: 0, max: 12, 
+        subtopic: "filter2durationhours", icon: "mdi:clock")
+      publish_hass_number(name: "Filter 2 Duration Minutes", min: 0, max: 59, 
+        subtopic: "filter2durationminutes", icon: "mdi:clock")
+      publish_hass_switch(name: "Filter 2 Enabled", 
+        subtopic: "filter2enabled", icon: "mdi:filter-check")
+  end 
 
   def publish_hass_number(name:, subtopic:, min: nil, max: nil, icon: nil, unit_of_measurement: nil)
     ha_number_path = @hass_discovery_topic + "number/" + @device_id + "/"
