@@ -530,7 +530,7 @@ class MQTTBridge
   def publish_filtercycles
     publish("spa/filter1hour/$name", "Filter Cycle 1 Start Hour")
     publish("spa/filter1hour/$datatype", "integer")
-    publish("spa/filter1hour/$format", "0:24")
+    publish("spa/filter1hour/$format", "0:23")
     publish("spa/filter1hour/$settable", "true")
 
     publish("spa/filter1minute/$name", "Filter Cycle 1 Start Minutes")
@@ -540,7 +540,7 @@ class MQTTBridge
 
     publish("spa/filter1durationhours/$name", "Filter Cycle 1 Duration Hours")
     publish("spa/filter1durationhours/$datatype", "integer")
-    publish("spa/filter1durationhours/$format", "0:24")
+    publish("spa/filter1durationhours/$format", "0:23")
     publish("spa/filter1durationhours/$settable", "true")
 
     publish("spa/filter1durationminutes/$name", "Filter Cycle 1 Duration Minutes")
@@ -554,7 +554,7 @@ class MQTTBridge
 
     publish("spa/filter2hour/$name", "Filter Cycle 2 Start Hour")
     publish("spa/filter2hour/$datatype", "integer")
-    publish("spa/filter2hour/$format", "0:24")
+    publish("spa/filter2hour/$format", "0:23")
     publish("spa/filter2hour/$settable", "true")
 
     publish("spa/filter2minute/$name", "Filter Cycle 2 Start Minutes")
@@ -564,7 +564,7 @@ class MQTTBridge
 
     publish("spa/filter2durationhours/$name", "Filter Cycle 2 Duration Hours")
     publish("spa/filter2durationhours/$datatype", "integer")
-    publish("spa/filter2durationhours/$format", "0:24")
+    publish("spa/filter2durationhours/$format", "0:23")
     publish("spa/filter2durationhours/$settable", "true")
 
     publish("spa/filter2durationminutes/$name", "Filter Cycle 2 Duration Minutes")
