@@ -180,6 +180,9 @@ module BWA
       return unless last_filter_configuration
       send_message(Messages::FilterCycles.new(changedItem, changedValue, @last_filter_configuration))
       request_filter_configuration
+      #Need to wait briefly to let the next message come in from the spa in order to update last_filter_configuration
+      #needed when automation quickly sets multiple values one right after the other
+      sleep(0.2)
     end
 
     def toggle_temperature_range
