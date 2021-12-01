@@ -231,7 +231,7 @@ class MQTTBridge
     publish_hass_entity(type: "sensor", name: "Current Temperature", subtopic: "currenttemperature",
        device_class: "temperature", icon: "mdi:thermometer", unit_of_measurement: "°F")
 
-    publish_hass_entity(type: "select", name: "Set Temperature", min: 50, max: 106, subtopic: "settemperature",
+    publish_hass_entity(type: "number", name: "Set Temperature", min: 50, max: 106, subtopic: "settemperature",
        icon: "mdi:thermometer", unit_of_measurement: "°F")
 
     publish_hass_entity(type: "switch", name: "in Hold Mode", subtopic: "hold", 
@@ -246,11 +246,11 @@ class MQTTBridge
     @last_scale = scale
 
     # Update temp ranges and measurement unit when scale changes
-   if scale == :celsius
+    if scale == :celsius
       publish_hass_entity(type: "number", name: "Set Temperature", min: 10, max: 40, subtopic: "settemperature", 
         icon: "mdi:thermometer", unit_of_measurement: "°C")
 
-      ppublish_hass_entity(type: "number", name: "Current Temperature", subtopic: "currenttemperature", 
+      publish_hass_entity(type: "number", name: "Current Temperature", subtopic: "currenttemperature", 
         icon: "mdi:thermometer", unit_of_measurement: "°C")
     else
       publish_hass_entity(type: "number", name: "Set Temperature", min: 50, max: 106, subtopic: "settemperature", 
