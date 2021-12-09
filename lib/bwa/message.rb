@@ -21,6 +21,8 @@ module BWA
 
     class << self
       def inherited(klass)
+        super
+
         @messages ||= []
         @messages << klass
       end
@@ -57,7 +59,7 @@ module BWA
 
       def parse(data)
         offset = -1
-        message_type = length = message_class = nil
+        message_type = length = nil
         loop do
           offset += 1
           # Not enough data for a full message; return and hope for more
@@ -141,7 +143,7 @@ module BWA
       end
     end
 
-    attr_reader :raw_data, :src
+    attr_reader :raw_data
 
     def initialize
       # most messages we're sending come from this address

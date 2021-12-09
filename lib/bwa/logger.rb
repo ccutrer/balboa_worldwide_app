@@ -28,7 +28,7 @@ module BWA
       @logger ||= Logger.new($stdout).tap do |log|
         $stdout.sync = true
         log.level = ENV.fetch("LOG_LEVEL", "WARN")
-        log.formatter = proc do |severity, datetime, progname, msg|
+        log.formatter = proc do |severity, _datetime, _progname, msg|
           "#{severity[0..0]}, #{msg2logstr(msg)}\n"
         end
       end

@@ -6,25 +6,22 @@ require "bwa/message"
 
 module BWA
   class Proxy
-    def initialize(host, port: 4257, listen_port: 4257)
+    def initialize(host, port: 4257)
       @host, @port = host, port
       @listen_socket = TCPServer.open(port)
     end
 
     def run
-      loop do
-        client_socket = @listen_socket.accept
-        server_socket = TCPSocket.new(@host, @port)
-        t1 = Thread.new do
-          shuffle_messages(client_socket, server_socket, "Client")
-        end
-        t2 = Thread.new do
-          shuffle_messages(server_socket, client_socket, "Server")
-        end
-        t1.join
-        t2.join
-        break
+      client_socket = @listen_socket.accept
+      server_socket = TCPSocket.new(@host, @port)
+      t1 = Thread.new do
+        shuffle_messages(client_socket, server_socket, "Client")
       end
+      t2 = Thread.new do
+        shuffle_messages(server_socket, client_socket, "Server")
+      end
+      t1.join
+      t2.join
     end
 
     def shuffle_messages(socket1, socket2, tag)

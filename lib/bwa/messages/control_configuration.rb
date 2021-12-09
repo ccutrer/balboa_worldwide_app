@@ -31,6 +31,8 @@ module BWA
       attr_accessor :pumps, :lights, :circ_pump, :blower, :mister, :aux
 
       def initialize
+        super
+
         self.pumps = Array.new(6, 0)
         self.lights = Array.new(2, false)
         self.circ_pump = false

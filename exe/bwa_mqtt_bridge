@@ -49,7 +49,7 @@ class MQTTBridge
     BWA.logger.warn "Balboa MQTT Bridge running (version #{BWA::VERSION})"
     SdNotify.ready
 
-    bwa_thread = Thread.new do
+    Thread.new do
       loop do
         message = @bwa.poll
         next if message.is_a?(BWA::Messages::Ready)

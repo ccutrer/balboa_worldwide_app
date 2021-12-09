@@ -6,7 +6,6 @@ module BWA
       attr_accessor :hold,
                     :priming,
                     :heating_mode,
-                    :temperature_scale,
                     :twenty_four_hour_time,
                     :filter,
                     :heating,
@@ -18,13 +17,17 @@ module BWA
                     :lights,
                     :mister,
                     :aux,
-                    :current_temperature, :set_temperature
+                    :current_temperature,
+                    :set_temperature
+      attr_reader :temperature_scale
 
       MESSAGE_TYPE = "\xaf\x13".force_encoding(Encoding::ASCII_8BIT)
       # additional features have been added in later versions
       MESSAGE_LENGTH = (24..32).freeze
 
       def initialize
+        super
+
         @src = 0xff
         self.hold = false
         self.priming = false

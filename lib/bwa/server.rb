@@ -14,10 +14,7 @@ module BWA
     def run
       loop do
         socket = @listen_socket.accept
-        # Thread.new do
         run_client(socket)
-        # end
-        break
       end
     end
 
