@@ -178,7 +178,7 @@ module BWA
       send_message(Messages::SetTemperature.new(desired.round))
     end
 
-    def set_time(hour, minute, twenty_four_hour_time = false)
+    def set_time(hour, minute, twenty_four_hour_time: false)
       send_message(Messages::SetTime.new(hour, minute, twenty_four_hour_time))
     end
 

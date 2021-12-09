@@ -32,16 +32,16 @@ module BWA
         data[0] = if item.is_a? Integer
                     item.chr
                   else
-                    (case item
-                     when :pump1 then 0x04
-                     when :pump2 then 0x05
-                     when :blower then 0x0c
-                     when :mister then 0x0e
-                     when :light1 then 0x11
-                     when :hold then 0x3c
-                     when :temperature_range then 0x50
-                     when :heating_mode then 0x51
-                     end).chr
+                    {
+                      pump1: 0x04,
+                      pump2: 0x05,
+                      blower: 0x0c,
+                      mister: 0x03,
+                      light1: 0x11,
+                      hold: 0x3c,
+                      temperature_range: 0x50,
+                      heating_mode: 0x51
+                    }[item].chr
                   end
         super(data)
       end

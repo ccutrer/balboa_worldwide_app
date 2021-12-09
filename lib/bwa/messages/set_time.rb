@@ -26,7 +26,7 @@ module BWA
       end
 
       def inspect
-        "#<BWA::Messages::SetTime #{Status.format_time(hour, minute, twenty_four_hour_time)}>"
+        "#<BWA::Messages::SetTime #{Status.format_time(hour, minute, twenty_four_hour_time: twenty_four_hour_time)}>"
       end
     end
   end

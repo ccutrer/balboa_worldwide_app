@@ -6,24 +6,22 @@ require "bwa/logger"
 module BWA
   class Discovery
     class << self
-      def discover(timeout = 5, exhaustive = false)
+      def discover(timeout = 5, exhaustive: false)
         socket = UDPSocket.new
         socket.bind("0.0.0.0", 0)
         socket.setsockopt(Socket::SOL_SOCKET, Socket::SO_BROADCAST, true)
         socket.sendmsg("Discovery: Who is out there?", 0, Socket.sockaddr_in(30_303, "255.255.255.255"))
         spas = {}
         loop do
-          if socket.wait_readable(timeout)
-            msg, ip = socket.recvfrom(64)
-            ip = ip[2]
-            name, mac = msg.split("\r\n")
-            name.strip!
-            if mac.start_with?("00-15-27-")
-              spas[ip] = name
-              break unless exhaustive
-            end
-          else
-            break
+          break unless socket.wait_readable(timeout)
+
+          msg, ip = socket.recvfrom(64)
+          ip = ip[2]
+          name, mac = msg.split("\r\n")
+          name.strip!
+          if mac.start_with?("00-15-27-")
+            spas[ip] = name
+            break unless exhaustive
           end
         end
         spas

@@ -114,8 +114,9 @@ module BWA
                                      data)
           end
         else
-          BWA.logger.info "Unrecognized message type #{BWA.raw2str(message_type)}: #{BWA.raw2str(data.slice(offset,
-                                                                                                            length + 2))}"
+          BWA.logger.info(
+            "Unrecognized message type #{BWA.raw2str(message_type)}: #{BWA.raw2str(data.slice(offset, length + 2))}"
+          )
           klass = Unrecognized
         end
 
@@ -127,19 +128,18 @@ module BWA
         [message, offset + length + 2]
       end
 
-      def format_time(hour, minute, twenty_four_hour_time = true)
+      def format_time(hour, minute, twenty_four_hour_time: true)
         if twenty_four_hour_time
-          print_hour = "%02d" % hour
+          format("%02d:%02d", hour, minute)
         else
           print_hour = hour % 12
           print_hour = 12 if print_hour.zero?
-          am_pm = (hour >= 12 ? "PM" : "AM")
+          format("%d:%02d%s", print_hour, minute, hour >= 12 ? "PM" : "AM")
         end
-        "#{print_hour}:#{"%02d" % minute}#{am_pm}"
       end
 
       def format_duration(hours, minutes)
-        "#{hours}:#{"%02d" % minutes}"
+        format("%d:%02d", hours, minutes)
       end
     end
 

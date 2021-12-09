@@ -97,10 +97,10 @@ class MQTTBridge
 
           # allow a skew of 1 minute, since the seconds will always be off
           if diff > 1
-            BWA.logger.info "Spa time #{format("%02d:%02d", message.hour,
-                                               message.minute)}, actually #{format("%02d:%02d", now.hour,
-                                                                                   now.min)}; correcting difference of #{diff} min"
-            @bwa.set_time(now.hour, now.min, message.twenty_four_hour_time)
+            spa_time_str = format("%02d:%02d", message.hour, message.minute)
+            now_str = format("%02d:%02d", now.hour, now.min)
+            BWA.logger.info "Spa time #{spa_time_str}, actually #{now_str}; correcting difference of #{diff} min"
+            @bwa.set_time(now.hour, now.min, twenty_four_hour_time: message.twenty_four_hour_time)
           end
           publish_attribute("spa/hold", message.hold)
           publish_attribute("spa/priming", message.priming)
@@ -128,19 +128,19 @@ class MQTTBridge
           publish_attribute("spa/circpump", message.circ_pump) if @bwa.last_control_configuration2&.circ_pump
           publish_attribute("spa/blower", message.blower) if @bwa.last_control_configuration2&.blower.to_i != 0
           publish_attribute("spa/mister", message.mister) if @bwa.last_control_configuration2&.mister
-          (0..5).each do |i|
+          6.times do |i|
             if @bwa.last_control_configuration2&.pumps&.[](i).to_i != 0
               publish_attribute("spa/pump#{i + 1}",
                                 message.pumps[i])
             end
           end
-          (0..1).each do |i|
+          2.times do |i|
             if @bwa.last_control_configuration2&.lights&.[](i)
               publish_attribute("spa/light#{i + 1}",
                                 message.lights[i])
             end
           end
-          (0..1).each do |i|
+          2.times do |i|
             publish_attribute("spa/aux#{i + 1}", message.lights[i]) if @bwa.last_control_configuration2&.aux&.[](i)
           end
 
@@ -172,7 +172,7 @@ class MQTTBridge
         next unless %w[true false].include?(value)
 
         now = Time.now
-        @bwa.set_time(now.hour, now.min, value == "true")
+        @bwa.set_time(now.hour, now.min, twenty_four_hour_time: value == "true")
       when "spa/temperaturerange/set"
         next @bwa.toggle_temperature_range if value == "toggle"
         next unless %w[low high].include?(value)
@@ -210,10 +210,10 @@ class MQTTBridge
   end
 
   def publish_attribute(attr, value)
-    if !@attributes.key?(attr) || @attributes[attr] != value
-      publish(attr, value.to_s)
-      @attributes[attr] = value
-    end
+    return if @attributes.key?(attr) && @attributes[attr] == value
+
+    publish(attr, value.to_s)
+    @attributes[attr] = value
   end
 
   def subscribe(topic)
@@ -305,8 +305,19 @@ class MQTTBridge
     @hass_device[:device][:model] = model
   end
 
-  def publish_hass_entity(type:, name:, subtopic:, payload_on: "true", payload_off: "false", state_on: "true",
-                          state_off: "false", icon: nil, min: nil, max: nil, unit_of_measurement: nil, device_class: nil, options: nil)
+  def publish_hass_entity(type:,
+                          name:,
+                          subtopic:,
+                          payload_on: "true",
+                          payload_off: "false",
+                          state_on: "true",
+                          state_off: "false",
+                          icon: nil,
+                          min: nil,
+                          max: nil,
+                          unit_of_measurement: nil,
+                          device_class: nil,
+                          options: nil)
     device_config = {
       name: "Hot Tub #{name}",
       unique_id: "spa_#{subtopic}",
@@ -539,7 +550,15 @@ class MQTTBridge
     subscribe("spa/filter2durationhours/set")
     subscribe("spa/filter2durationminutes/set")
 
-    @things.merge(["filter1hour,filter1minute,filter1durationhours,filter1durationminutes,filter2enabled,filter2hour,filter2minute,filter2durationhours,filter2durationminutes"])
+    @things.merge(%w[filter1hour
+                     filter1minute
+                     filter1durationhours
+                     filter1durationminutes
+                     filter2enabled
+                     filter2hour
+                     filter2minute
+                     filter2durationhours
+                     filter2durationminutes])
 
     publish_hass_filters
     publish_nodes
@@ -547,7 +566,17 @@ class MQTTBridge
 
   def publish_nodes
     publish("spa/$properties",
-            (["hold,priming,heatingmode,temperaturescale,24htime,heating,temperaturerange,currenttemperature,settemperature,filter1,filter2"] + @things.to_a).join(","))
+            (%w[hold
+                priming
+                heatingmode
+                temperaturescale
+                24htime
+                heating
+                temperaturerange
+                currenttemperature
+                settemperature
+                filter1
+                filter2] + @things.to_a).join(","))
   end
 end
 

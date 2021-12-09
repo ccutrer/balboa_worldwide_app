@@ -90,21 +90,20 @@ module BWA
         self.current_temperature = data[2].ord
         self.current_temperature = nil if current_temperature == 0xff
         self.set_temperature = data[20].ord
-        if temperature_scale == :celsius
-          self.current_temperature /= 2.0 if current_temperature
-          self.set_temperature /= 2.0 if set_temperature
-        end
+
+        return unless temperature_scale == :celsius
+
+        self.current_temperature /= 2.0 if current_temperature
+        self.set_temperature /= 2.0 if set_temperature
       end
 
       def serialize
         data = "\x00" * 24
         data[0] = (hold ? 0x05 : 0x00).chr
         data[1] = (priming ? 0x01 : 0x00).chr
-        data[5] = (case heating_mode
-                   when :ready then 0x00
-                   when :rest then 0x01
-                   when :ready_in_rest then 0x02
-                   end).chr
+        data[5] = { ready: 0x00,
+                    rest: 0x01,
+                    ready_in_rest: 0x02 }[heating_mode].chr
         flags = 0
         flags |= 0x01 if temperature_scale == :celsius
         flags |= 0x02 if twenty_four_hour_time
@@ -167,7 +166,7 @@ module BWA
 
         items << "hold" if hold
         items << "priming" if priming
-        items << self.class.format_time(hour, minute, twenty_four_hour_time)
+        items << self.class.format_time(hour, minute, twenty_four_hour_time: twenty_four_hour_time)
         items << "#{current_temperature || "--"}/#{set_temperature}º#{temperature_scale.to_s[0].upcase}"
         items << "filter=#{filter.inspect}"
         items << heating_mode

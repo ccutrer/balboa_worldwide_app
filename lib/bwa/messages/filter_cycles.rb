@@ -13,21 +13,37 @@ module BWA
 
       def initialize(changed_item = nil, changed_value = nil, old_values = nil)
         super()
-        unless changed_item.nil?
-          self.filter1_hour = changed_item == "filter1hour" ? changed_value.to_i : old_values.filter1_hour
-          self.filter1_minute = changed_item == "filter1minute" ? changed_value.to_i : old_values.filter1_minute
-          self.filter1_duration_hours = changed_item == "filter1durationhours" ? changed_value.to_i : old_values.filter1_duration_hours
-          self.filter1_duration_minutes = changed_item == "filter1durationminutes" ? changed_value.to_i : old_values.filter1_duration_minutes
-          self.filter2_enabled = if changed_item == "filter2enabled"
-                                   changed_value == "true"
-                                 else
-                                   old_values.filter2_enabled
-                                 end
-          self.filter2_hour = changed_item == "filter2hour" ? changed_value.to_i : old_values.filter2_hour
-          self.filter2_minute = changed_item == "filter2minute" ? changed_value.to_i : old_values.filter2_minute
-          self.filter2_duration_hours = changed_item == "filter2durationhours" ? changed_value.to_i : old_values.filter2_duration_hours
-          self.filter2_duration_minutes = changed_item == "filter2durationminutes" ? changed_value.to_i : old_values.filter2_duration_minutes
-        end
+        return if changed_item.nil?
+
+        self.filter1_hour = changed_item == "filter1hour" ? changed_value.to_i : old_values.filter1_hour
+        self.filter1_minute = changed_item == "filter1minute" ? changed_value.to_i : old_values.filter1_minute
+        self.filter1_duration_hours = if changed_item == "filter1durationhours"
+                                        changed_value.to_i
+                                      else
+                                        old_values.filter1_duration_hours
+                                      end
+        self.filter1_duration_minutes = if changed_item == "filter1durationminutes"
+                                          changed_value.to_i
+                                        else
+                                          old_values.filter1_duration_minutes
+                                        end
+        self.filter2_enabled = if changed_item == "filter2enabled"
+                                 changed_value == "true"
+                               else
+                                 old_values.filter2_enabled
+                               end
+        self.filter2_hour = changed_item == "filter2hour" ? changed_value.to_i : old_values.filter2_hour
+        self.filter2_minute = changed_item == "filter2minute" ? changed_value.to_i : old_values.filter2_minute
+        self.filter2_duration_hours = if changed_item == "filter2durationhours"
+                                        changed_value.to_i
+                                      else
+                                        old_values.filter2_duration_hours
+                                      end
+        self.filter2_duration_minutes = if changed_item == "filter2durationminutes"
+                                          changed_value.to_i
+                                        else
+                                          old_values.filter2_duration_minutes
+                                        end
       end
 
       def parse(data)
@@ -50,8 +66,9 @@ module BWA
         data += filter1_duration_hours.chr
         data += filter1_duration_minutes.chr
 
-        # The filter2 start hour is merged with the filter2 enable (who thought that was a good idea?) The high order bit of the byte is a flag
-        # to indicate this so we have to do a bit of different processing to set that.
+        # The filter2 start hour is merged with the filter2 enable.
+        # The high order bit of the byte is a flag to indicate this so we have
+        #  to do a bit of different processing to set that.
         # Get the filter 2 start hour
         starthour = filter2_hour
 
