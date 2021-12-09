@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "uri"
 
 require "bwa/logger"
@@ -9,10 +11,11 @@ module BWA
 
     def initialize(uri)
       uri = URI.parse(uri)
-      if uri.scheme == "tcp"
+      case uri.scheme
+      when "tcp"
         require "socket"
         @io = TCPSocket.new(uri.host, uri.port || 4257)
-      elsif uri.scheme == "telnet" || uri.scheme == "rfc2217"
+      when "telnet", "rfc2217"
         require "net/telnet/rfc2217"
         @io = Net::Telnet::RFC2217.new("Host" => uri.host, "Port" => uri.port || 23, "baud" => 115_200)
         @queue = []

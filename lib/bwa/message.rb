@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "bwa/logger"
 require "bwa/crc"
 
@@ -28,7 +30,7 @@ module BWA
         "\xbf\x00".force_encoding(Encoding::ASCII_8BIT), # request for new clients
         "\xbf\xe1".force_encoding(Encoding::ASCII_8BIT),
         "\xbf\x07".force_encoding(Encoding::ASCII_8BIT) # nothing to send
-      ]
+      ].freeze
 
       # Don't log messages of these types, even in DEBUG mode.
       # They are very frequent and would swamp the logs.
@@ -69,7 +71,7 @@ module BWA
           length = data[offset + 1].ord
 
           # No message is this short or this long; keep scanning
-          next if length < 5 or length >= "~".ord
+          next if (length < 5) || (length >= "~".ord)
 
           # don't have enough data for what this message wants;
           # return and hope for more (yes this might cause a
@@ -88,7 +90,7 @@ module BWA
         end
 
         message_type = data.slice(offset + 3, 2)
-        BWA.logger.debug "discarding invalid data prior to message #{BWA.raw2str(data[0...offset])}" unless offset == 0
+        BWA.logger.debug "discarding invalid data prior to message #{BWA.raw2str(data[0...offset])}" unless offset.zero?
         unless common_messages.include?(message_type)
           BWA.logger.debug " read: #{BWA.raw2str(data.slice(offset,
                                                             length + 2))}"
@@ -129,7 +131,7 @@ module BWA
           print_hour = "%02d" % hour
         else
           print_hour = hour % 12
-          print_hour = 12 if print_hour == 0
+          print_hour = 12 if print_hour.zero?
           am_pm = (hour >= 12 ? "PM" : "AM")
         end
         "#{print_hour}:#{"%02d" % minute}#{am_pm}"

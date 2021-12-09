@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "logger"
 
 module BWA
@@ -23,8 +25,8 @@ module BWA
     attr_writer :logger, :verbosity
 
     def logger
-      @logger ||= Logger.new(STDOUT).tap do |log|
-        STDOUT.sync = true
+      @logger ||= Logger.new($stdout).tap do |log|
+        $stdout.sync = true
         log.level = ENV.fetch("LOG_LEVEL", "WARN")
         log.formatter = proc do |severity, datetime, progname, msg|
           "#{severity[0..0]}, #{msg2logstr(msg)}\n"
@@ -42,7 +44,7 @@ module BWA
       when ::String
         msg
       when ::Exception
-        "#{msg.message} (#{msg.class})\n#{msg.backtrace.join("\n") if msg.backtrace}"
+        "#{msg.message} (#{msg.class})\n#{msg.backtrace&.join("\n")}"
       else
         msg.inspect
       end

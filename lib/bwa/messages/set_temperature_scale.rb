@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module BWA
   module Messages
     class SetTemperatureScale < Message
@@ -12,7 +14,7 @@ module BWA
       end
 
       def parse(data)
-        self.scale = data[1].ord == 0x00 ? :fahrenheit : :celsius
+        self.scale = data[1].ord.zero? ? :fahrenheit : :celsius
       end
 
       def serialize

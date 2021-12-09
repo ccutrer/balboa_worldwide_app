@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module BWA
   module Messages
     class Status < Message
@@ -20,7 +22,7 @@ module BWA
 
       MESSAGE_TYPE = "\xaf\x13".force_encoding(Encoding::ASCII_8BIT)
       # additional features have been added in later versions
-      MESSAGE_LENGTH = 24..32
+      MESSAGE_LENGTH = (24..32).freeze
 
       def initialize
         @src = 0xff

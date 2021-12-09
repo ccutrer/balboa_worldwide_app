@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+# frozen_string_literal: true
 
 require "mqtt"
 require "sd_notify"
@@ -314,24 +315,24 @@ class MQTTBridge
     # Entity type specific configurations
     case type
     when "switch"
-      hass_discovery_path = @hass_discovery_topic + "switch/" + @device_id + "/"
+      hass_discovery_path = "#{@hass_discovery_topic}switch/#{@device_id}/"
       device_config[:command_topic] = "#{@base_topic}/spa/#{subtopic}/set"
       device_config[:payload_on] = payload_on unless payload_on.nil?
       device_config[:payload_off] = payload_off unless payload_off.nil?
       device_config[:state_on] = state_on unless state_on.nil?
       device_config[:state_off] = state_off unless state_off.nil?
     when "binary_sensor"
-      hass_discovery_path = @hass_discovery_topic + "binary_sensor/" + @device_id + "/"
+      hass_discovery_path = "#{@hass_discovery_topic}binary_sensor/#{@device_id}/"
       device_config[:state_on] = state_on unless state_on.nil?
       device_config[:state_off] = state_off unless state_off.nil?
     when "select"
-      hass_discovery_path = @hass_discovery_topic + "select/" + @device_id + "/"
+      hass_discovery_path = "#{@hass_discovery_topic}select/#{@device_id}/"
       device_config[:command_topic] = "#{@base_topic}/spa/#{subtopic}/set"
       device_config[:options] = options
     when "sensor"
-      hass_discovery_path = @hass_discovery_topic + "sensor/" + @device_id + "/"
+      hass_discovery_path = "#{@hass_discovery_topic}sensor/#{@device_id}/"
     when "number"
-      hass_discovery_path = @hass_discovery_topic + "number/" + @device_id + "/"
+      hass_discovery_path = "#{@hass_discovery_topic}number/#{@device_id}/"
       device_config[:command_topic] = "#{@base_topic}/spa/#{subtopic}/set"
       device_config[:min] = min unless min.nil?
       device_config[:max] = max unless max.nil?
