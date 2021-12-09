@@ -1,14 +1,14 @@
 #!/usr/bin/env ruby
 
-require 'mqtt'
-require 'sd_notify'
-require 'set'
-require 'json'
+require "mqtt"
+require "sd_notify"
+require "set"
+require "json"
 
-require 'bwa/logger'
-require 'bwa/client'
-require 'bwa/discovery'
-require 'bwa/version'
+require "bwa/logger"
+require "bwa/client"
+require "bwa/discovery"
+require "bwa/version"
 
 class MQTTBridge
   def initialize(mqtt_uri, bwa, device_id: "bwa", base_topic: "homie")
@@ -73,20 +73,20 @@ class MQTTBridge
             publish_circpump if message.circ_pump
             publish("$state", "ready")
           when BWA::Messages::FilterCycles
-            publish_attribute("spa/filter1hour",message.filter1_hour)
-            publish_attribute("spa/filter1minute",message.filter1_minute)
-            publish_attribute("spa/filter1durationhours",message.filter1_duration_hours)
-            publish_attribute("spa/filter1durationminutes",message.filter1_duration_minutes)
-            publish_attribute("spa/filter2enabled",message.filter2_enabled)
-            publish_attribute("spa/filter2hour",message.filter2_hour)
-            publish_attribute("spa/filter2minute",message.filter2_minute)
-            publish_attribute("spa/filter2durationhours",message.filter2_duration_hours)
-            publish_attribute("spa/filter2durationminutes",message.filter2_duration_minutes)
+            publish_attribute("spa/filter1hour", message.filter1_hour)
+            publish_attribute("spa/filter1minute", message.filter1_minute)
+            publish_attribute("spa/filter1durationhours", message.filter1_duration_hours)
+            publish_attribute("spa/filter1durationminutes", message.filter1_duration_minutes)
+            publish_attribute("spa/filter2enabled", message.filter2_enabled)
+            publish_attribute("spa/filter2hour", message.filter2_hour)
+            publish_attribute("spa/filter2minute", message.filter2_minute)
+            publish_attribute("spa/filter2durationhours", message.filter2_duration_hours)
+            publish_attribute("spa/filter2durationminutes", message.filter2_duration_minutes)
             publish_hass_filters
           when BWA::Messages::Status
             @bwa.request_control_info unless @bwa.last_control_configuration
             @bwa.request_control_info2 unless @bwa.last_control_configuration2
-            @bwa.request_filter_configuration unless @bwa.last_filter_configuration 
+            @bwa.request_filter_configuration unless @bwa.last_filter_configuration
 
             # make sure time is in sync
             now = Time.now
@@ -97,7 +97,9 @@ class MQTTBridge
 
             # allow a skew of 1 minute, since the seconds will always be off
             if diff > 1
-              BWA.logger.info "Spa time #{"%02d:%02d" % [message.hour, message.minute]}, actually #{"%02d:%02d" % [now.hour, now.min]}; correcting difference of #{diff} min"
+              BWA.logger.info "Spa time #{"%02d:%02d" % [message.hour,
+                                                         message.minute]}, actually #{"%02d:%02d" % [now.hour,
+                                                                                                     now.min]}; correcting difference of #{diff} min"
               @bwa.set_time(now.hour, now.min, message.twenty_four_hour_time)
             end
             publish_attribute("spa/hold", message.hold)
@@ -127,10 +129,12 @@ class MQTTBridge
             publish_attribute("spa/blower", message.blower) if @bwa.last_control_configuration2&.blower.to_i != 0
             publish_attribute("spa/mister", message.mister) if @bwa.last_control_configuration2&.mister
             (0..5).each do |i|
-              publish_attribute("spa/pump#{i + 1}", message.pumps[i]) if @bwa.last_control_configuration2&.pumps&.[](i).to_i != 0
+              publish_attribute("spa/pump#{i + 1}",
+                                message.pumps[i]) if @bwa.last_control_configuration2&.pumps&.[](i).to_i != 0
             end
             (0..1).each do |i|
-              publish_attribute("spa/light#{i + 1}", message.lights[i]) if @bwa.last_control_configuration2&.lights&.[](i)
+              publish_attribute("spa/light#{i + 1}",
+                                message.lights[i]) if @bwa.last_control_configuration2&.lights&.[](i)
             end
             (0..1).each do |i|
               publish_attribute("spa/aux#{i + 1}", message.lights[i]) if @bwa.last_control_configuration2&.aux&.[](i)
@@ -148,37 +152,46 @@ class MQTTBridge
       BWA.logger.warn "from mqtt: #{value.inspect} at #{topic}"
       case topic[@base_topic.length + 1..-1]
       when "spa/hold/set"
-        next @bwa.toggle_hold if value == 'toggle'
+        next @bwa.toggle_hold if value == "toggle"
         next unless %w{true false}.include?(value)
-        @bwa.set_hold(value == 'true')
+
+        @bwa.set_hold(value == "true")
       when "spa/heatingmode/set"
-        next @bwa.toggle_heating_mode if value == 'toggle'
+        next @bwa.toggle_heating_mode if value == "toggle"
         next unless %w{ready rest}.include?(value)
+
         @bwa.set_heating_mode(value.to_sym)
       when "spa/temperaturescale/set"
         next unless %w{fahrenheit celsius}.include?(value)
+
         @bwa.set_temperature_scale(value.to_sym)
       when "spa/24htime/set"
         next unless %w{true false}.include?(value)
+
         now = Time.now
-        @bwa.set_time(now.hour, now.min, value == 'true')
+        @bwa.set_time(now.hour, now.min, value == "true")
       when "spa/temperaturerange/set"
-        next @bwa.toggle_temperature_range if value == 'toggle'
+        next @bwa.toggle_temperature_range if value == "toggle"
         next unless %w{low high}.include?(value)
+
         @bwa.set_temperature_range(value.to_sym)
       when %r{^spa/pump([1-6])/set$}
-        next @bwa.toggle_pump($1.to_i) if value == 'toggle'
+        next @bwa.toggle_pump($1.to_i) if value == "toggle"
+
         @bwa.set_pump($1.to_i, value.to_i)
       when %r{^spa/(light|aux)([12])/set$}
-        next @bwa.send(:"toggle_#{$1}", $2.to_i) if value == 'toggle'
+        next @bwa.send(:"toggle_#{$1}", $2.to_i) if value == "toggle"
         next unless %w{true false}.include?(value)
-        @bwa.send(:"set_#{$1}", $2.to_i, value == 'true')
+
+        @bwa.send(:"set_#{$1}", $2.to_i, value == "true")
       when "spa/mister/set"
-        next @bwa.toggle_mister if value == 'toggle'
+        next @bwa.toggle_mister if value == "toggle"
         next unless %w{true false}.include?(value)
-        @bwa.set_mister(value == 'true')
+
+        @bwa.set_mister(value == "true")
       when "spa/blower/set"
-        next @bwa.toggle_blower if value == 'toggle'
+        next @bwa.toggle_blower if value == "toggle"
+
         @bwa.set_blower(value.to_i)
       when "spa/settemperature/set"
         @bwa.set_temperature(value.to_f)
@@ -205,90 +218,92 @@ class MQTTBridge
   end
 
   def publish_hass_discovery()
-    publish_hass_entity(type: "binary_sensor", name: "Priming", subtopic: "priming", 
-      device_class: "running", icon: "mdi:fast-forward")
-      
-    publish_hass_entity(type: "binary_sensor", name: "Circulation Pump", subtopic: "circpump", 
-      device_class: "running", icon: "mdi:sync")
+    publish_hass_entity(type: "binary_sensor", name: "Priming", subtopic: "priming",
+                        device_class: "running", icon: "mdi:fast-forward")
 
-    publish_hass_entity(type: "binary_sensor", name: "Filter 1 Cycle Running", subtopic: "filter1", 
-      device_class: "running", icon:  "mdi:air-filter")
+    publish_hass_entity(type: "binary_sensor", name: "Circulation Pump", subtopic: "circpump",
+                        device_class: "running", icon: "mdi:sync")
 
-    publish_hass_entity(type: "binary_sensor", name: "Filter 2 Cycle Running", subtopic: "filter2", 
-      device_class: "running", icon:  "mdi:air-filter")
+    publish_hass_entity(type: "binary_sensor", name: "Filter 1 Cycle Running", subtopic: "filter1",
+                        device_class: "running", icon:  "mdi:air-filter")
 
-    publish_hass_entity(type: "binary_sensor", name: "Heater", subtopic: "heating", 
-      device_class: "running", icon:  "mdi:hot-tub")
+    publish_hass_entity(type: "binary_sensor", name: "Filter 2 Cycle Running", subtopic: "filter2",
+                        device_class: "running", icon:  "mdi:air-filter")
 
-    publish_hass_entity(type: "select", name: "Heating Mode", subtopic: "heatingmode", 
-      options: ["ready","rest","ready_in_rest"], icon: "mdi:cog-play")
+    publish_hass_entity(type: "binary_sensor", name: "Heater", subtopic: "heating",
+                        device_class: "running", icon:  "mdi:hot-tub")
 
-    publish_hass_entity(type: "select", name: "Temperature Range", subtopic: "temperaturerange", 
-      options:["high","low"], icon: "mdi:thermometer-lines")
+    publish_hass_entity(type: "select", name: "Heating Mode", subtopic: "heatingmode",
+                        options: ["ready", "rest", "ready_in_rest"], icon: "mdi:cog-play")
+
+    publish_hass_entity(type: "select", name: "Temperature Range", subtopic: "temperaturerange",
+                        options: ["high", "low"], icon: "mdi:thermometer-lines")
 
     publish_hass_entity(type: "sensor", name: "Temperature Scale", subtopic: "temperaturescale")
 
     publish_hass_entity(type: "sensor", name: "Current Temperature", subtopic: "currenttemperature",
-       device_class: "temperature", icon: "mdi:thermometer", unit_of_measurement: "°F")
+                        device_class: "temperature", icon: "mdi:thermometer", unit_of_measurement: "°F")
 
     publish_hass_entity(type: "number", name: "Set Temperature", min: 50, max: 106, subtopic: "settemperature",
-       icon: "mdi:thermometer", unit_of_measurement: "°F")
+                        icon: "mdi:thermometer", unit_of_measurement: "°F")
 
-    publish_hass_entity(type: "switch", name: "in Hold Mode", subtopic: "hold", 
-      icon: "mdi:pause-octagon")
+    publish_hass_entity(type: "switch", name: "in Hold Mode", subtopic: "hold",
+                        icon: "mdi:pause-octagon")
 
-    publish_hass_entity(type: "switch", name: "Clock is 24 hour time", subtopic: "24htime", 
-      icon: "mdi:timer-cog")  
+    publish_hass_entity(type: "switch", name: "Clock is 24 hour time", subtopic: "24htime",
+                        icon: "mdi:timer-cog")
   end
 
   def publish_hass_discovery_settemp(scale)
     return if scale == @last_scale
+
     @last_scale = scale
 
     # Update temp ranges and measurement unit when scale changes
     if scale == :celsius
-      publish_hass_entity(type: "number", name: "Set Temperature", min: 10, max: 40, subtopic: "settemperature", 
-        icon: "mdi:thermometer", unit_of_measurement: "°C")
+      publish_hass_entity(type: "number", name: "Set Temperature", min: 10, max: 40, subtopic: "settemperature",
+                          icon: "mdi:thermometer", unit_of_measurement: "°C")
 
-      publish_hass_entity(type: "number", name: "Current Temperature", subtopic: "currenttemperature", 
-        icon: "mdi:thermometer", unit_of_measurement: "°C")
+      publish_hass_entity(type: "number", name: "Current Temperature", subtopic: "currenttemperature",
+                          icon: "mdi:thermometer", unit_of_measurement: "°C")
     else
-      publish_hass_entity(type: "number", name: "Set Temperature", min: 50, max: 106, subtopic: "settemperature", 
-        icon: "mdi:thermometer", unit_of_measurement: "°F")
-      
-        publish_hass_entity(type: "sensor", name: "Current Temperature", subtopic: "currenttemperature", 
-        icon: "mdi:thermometer", unit_of_measurement: "°F")
+      publish_hass_entity(type: "number", name: "Set Temperature", min: 50, max: 106, subtopic: "settemperature",
+                          icon: "mdi:thermometer", unit_of_measurement: "°F")
+
+      publish_hass_entity(type: "sensor", name: "Current Temperature", subtopic: "currenttemperature",
+                          icon: "mdi:thermometer", unit_of_measurement: "°F")
     end
   end
 
   def publish_hass_discovery_pumps(i, speeds)
-    publish_hass_entity(type: "switch", name: "Pump #{i}", subtopic: "pump#{i}", payload_on: "toggle", 
-      payload_off: "toggle", state_on: "2", state_off: "0",icon: "mdi:chart-bubble")
+    publish_hass_entity(type: "switch", name: "Pump #{i}", subtopic: "pump#{i}", payload_on: "toggle",
+                        payload_off: "toggle", state_on: "2", state_off: "0", icon: "mdi:chart-bubble")
   end
 
   def publish_hass_discovery_things(type, i)
-    #Things - Lights and such
+    # Things - Lights and such
     case type
     when :light
-      publish_hass_entity(type: "switch", name: "#{type} #{i}", subtopic: "#{type}#{i}", 
-        icon: "mdi:car-parking-lights")
+      publish_hass_entity(type: "switch", name: "#{type} #{i}", subtopic: "#{type}#{i}",
+                          icon: "mdi:car-parking-lights")
     when :mister
-      publish_hass_entity(type: "switch", name: "#{type} #{i}", subtopic: "#{type}#{i}", 
-        icon: "mdi:sprinkler-fire")
+      publish_hass_entity(type: "switch", name: "#{type} #{i}", subtopic: "#{type}#{i}",
+                          icon: "mdi:sprinkler-fire")
     when :blower
-      publish_hass_entity(type: "switch", name: "#{type} #{i}", subtopic: "#{type}#{i}", 
-        icon: "mdi:chart-bubble")
+      publish_hass_entity(type: "switch", name: "#{type} #{i}", subtopic: "#{type}#{i}",
+                          icon: "mdi:chart-bubble")
     end
   end
 
   def update_hass_devicemodel(model)
     return if model == @last_model
+
     @last_model = model
     @hass_device[:device][:model] = model
   end
 
-  def publish_hass_entity(type:, name:, subtopic:, payload_on: "true", payload_off: "false", state_on: "true", 
-    state_off: "false",icon: nil, min: nil, max: nil, unit_of_measurement: nil, device_class: nil, options: nil) 
+  def publish_hass_entity(type:, name:, subtopic:, payload_on: "true", payload_off: "false", state_on: "true",
+                          state_off: "false", icon: nil, min: nil, max: nil, unit_of_measurement: nil, device_class: nil, options: nil)
     device_config = {
       name: "Hot Tub #{name}",
       unique_id: "spa_#{subtopic}",
@@ -297,7 +312,7 @@ class MQTTBridge
     # Entity type specific configurations
     case type
     when "switch"
-      hass_discovery_path =  @hass_discovery_topic + "switch/" + @device_id + "/"
+      hass_discovery_path = @hass_discovery_topic + "switch/" + @device_id + "/"
       device_config[:command_topic] = "#{@base_topic}/spa/#{subtopic}/set"
       device_config[:payload_on] = payload_on unless payload_on.nil?
       device_config[:payload_off] = payload_off unless payload_off.nil?
@@ -325,35 +340,35 @@ class MQTTBridge
     device_config[:device_class] = device_class unless device_class.nil?
     device_config[:icon] = icon unless icon.nil?
 
-    @mqtt.publish(hass_discovery_path+ "#{subtopic}/config", device_config
+    @mqtt.publish(hass_discovery_path + "#{subtopic}/config", device_config
       .merge(@hass_device)
       .merge(@hass_availability)
       .to_json, true)
   end
 
   def publish_hass_filters
-      # filter1 
-      publish_hass_entity(type: "number", name: "Filter 1 Hour", min: 0, max: 23, 
-        subtopic: "filter1hour", icon: "mdi:clock")
-      publish_hass_entity(type: "number", name: "Filter 1 Minute", min: 0, max: 59, 
-        subtopic: "filter1minute", icon: "mdi:clock")
-      publish_hass_entity(type: "number", name: "Filter 1 Duration Hours", min: 0, max: 23, 
-        subtopic: "filter1durationhours", icon: "mdi:clock")
-      publish_hass_entity(type: "number", name: "Filter 1 Duration Minutes", min: 0, max: 59, 
-        subtopic: "filter1durationminutes", icon: "mdi:clock")
+    # filter1
+    publish_hass_entity(type: "number", name: "Filter 1 Hour", min: 0, max: 23,
+                        subtopic: "filter1hour", icon: "mdi:clock")
+    publish_hass_entity(type: "number", name: "Filter 1 Minute", min: 0, max: 59,
+                        subtopic: "filter1minute", icon: "mdi:clock")
+    publish_hass_entity(type: "number", name: "Filter 1 Duration Hours", min: 0, max: 23,
+                        subtopic: "filter1durationhours", icon: "mdi:clock")
+    publish_hass_entity(type: "number", name: "Filter 1 Duration Minutes", min: 0, max: 59,
+                        subtopic: "filter1durationminutes", icon: "mdi:clock")
 
-      # filter2
-      publish_hass_entity(type: "number", name: "Filter 2 Hour", min: 0, max: 23, 
-        subtopic: "filter2hour", icon: "mdi:clock")
-      publish_hass_entity(type: "number", name: "Filter 2 Minute", min: 0, max: 59, 
-        subtopic: "filter2minute", icon: "mdi:clock")
-      publish_hass_entity(type: "number", name: "Filter 2 Duration Hours", min: 0, max: 12, 
-        subtopic: "filter2durationhours", icon: "mdi:clock")
-      publish_hass_entity(type: "number", name: "Filter 2 Duration Minutes", min: 0, max: 59, 
-        subtopic: "filter2durationminutes", icon: "mdi:clock")
-        publish_hass_entity(type: "switch", name: "Filter 2 Enabled", 
-        subtopic: "filter2enabled", icon: "mdi:filter-check")
-  end 
+    # filter2
+    publish_hass_entity(type: "number", name: "Filter 2 Hour", min: 0, max: 23,
+                        subtopic: "filter2hour", icon: "mdi:clock")
+    publish_hass_entity(type: "number", name: "Filter 2 Minute", min: 0, max: 59,
+                        subtopic: "filter2minute", icon: "mdi:clock")
+    publish_hass_entity(type: "number", name: "Filter 2 Duration Hours", min: 0, max: 12,
+                        subtopic: "filter2durationhours", icon: "mdi:clock")
+    publish_hass_entity(type: "number", name: "Filter 2 Duration Minutes", min: 0, max: 59,
+                        subtopic: "filter2durationminutes", icon: "mdi:clock")
+    publish_hass_entity(type: "switch", name: "Filter 2 Enabled",
+                        subtopic: "filter2enabled", icon: "mdi:filter-check")
+  end
 
   def publish_basic_attributes
     publish("$homie", "4.0.0")
@@ -528,7 +543,8 @@ class MQTTBridge
   end
 
   def publish_nodes
-    publish("spa/$properties", (["hold,priming,heatingmode,temperaturescale,24htime,heating,temperaturerange,currenttemperature,settemperature,filter1,filter2"] + @things.to_a).join(','))
+    publish("spa/$properties",
+            (["hold,priming,heatingmode,temperaturescale,24htime,heating,temperaturerange,currenttemperature,settemperature,filter1,filter2"] + @things.to_a).join(","))
   end
 end
 

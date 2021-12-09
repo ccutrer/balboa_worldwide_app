@@ -1,4 +1,4 @@
-require 'digest/crc'
+require "digest/crc"
 
 module BWA
   class CRC < Digest::CRC8

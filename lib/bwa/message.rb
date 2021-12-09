@@ -1,5 +1,5 @@
-require 'bwa/logger'
-require 'bwa/crc'
+require "bwa/logger"
+require "bwa/crc"
 
 module BWA
   class InvalidMessage < RuntimeError
@@ -59,13 +59,13 @@ module BWA
           return nil if data.length - offset < 5
 
           # Keep scanning until message start char
-          next unless data[offset] == '~'
+          next unless data[offset] == "~"
 
           # Read length (safe since we have at least 5 chars)
           length = data[offset + 1].ord
 
           # No message is this short or this long; keep scanning
-          next if length < 5 or length >= '~'.ord
+          next if length < 5 or length >= "~".ord
 
           # don't have enough data for what this message wants;
           # return and hope for more (yes this might cause a
@@ -74,7 +74,7 @@ module BWA
           return nil if length + 2 > data.length - offset
 
           # Not properly terminated; keep scanning
-          next unless data[offset + length + 1] == '~'
+          next unless data[offset + length + 1] == "~"
 
           # Not a valid checksum; keep scanning
           next unless CRC.checksum(data.slice(offset + 1, length - 1)) == data[offset + length].ord
@@ -85,7 +85,8 @@ module BWA
 
         message_type = data.slice(offset + 3, 2)
         BWA.logger.debug "discarding invalid data prior to message #{BWA.raw2str(data[0...offset])}" unless offset == 0
-        BWA.logger.debug " read: #{BWA.raw2str(data.slice(offset, length + 2))}" unless common_messages.include?(message_type)
+        BWA.logger.debug " read: #{BWA.raw2str(data.slice(offset,
+                                                          length + 2))}" unless common_messages.include?(message_type)
 
         src = data[offset + 2].ord
         klass = @messages.find { |k| k::MESSAGE_TYPE == message_type }
@@ -95,13 +96,15 @@ module BWA
 
         if klass
           valid_length = if klass::MESSAGE_LENGTH.respond_to?(:include?)
-            klass::MESSAGE_LENGTH.include?(length - 5)
-          else
-            length - 5 == klass::MESSAGE_LENGTH
-          end
-          raise InvalidMessage.new("Unrecognized data length (#{length}) for message #{klass}", data) unless valid_length
+                           klass::MESSAGE_LENGTH.include?(length - 5)
+                         else
+                           length - 5 == klass::MESSAGE_LENGTH
+                         end
+          raise InvalidMessage.new("Unrecognized data length (#{length}) for message #{klass}",
+                                   data) unless valid_length
         else
-          BWA.logger.info "Unrecognized message type #{BWA.raw2str(message_type)}: #{BWA.raw2str(data.slice(offset, length + 2))}"
+          BWA.logger.info "Unrecognized message type #{BWA.raw2str(message_type)}: #{BWA.raw2str(data.slice(offset,
+                                                                                                            length + 2))}"
           klass = Unrecognized
         end
 
@@ -152,14 +155,14 @@ module BWA
   end
 end
 
-require 'bwa/messages/configuration'
-require 'bwa/messages/configuration_request'
-require 'bwa/messages/control_configuration'
-require 'bwa/messages/control_configuration_request'
-require 'bwa/messages/filter_cycles'
-require 'bwa/messages/ready'
-require 'bwa/messages/set_temperature'
-require 'bwa/messages/set_temperature_scale'
-require 'bwa/messages/set_time'
-require 'bwa/messages/status'
-require 'bwa/messages/toggle_item'
+require "bwa/messages/configuration"
+require "bwa/messages/configuration_request"
+require "bwa/messages/control_configuration"
+require "bwa/messages/control_configuration_request"
+require "bwa/messages/filter_cycles"
+require "bwa/messages/ready"
+require "bwa/messages/set_temperature"
+require "bwa/messages/set_temperature_scale"
+require "bwa/messages/set_time"
+require "bwa/messages/status"
+require "bwa/messages/toggle_item"

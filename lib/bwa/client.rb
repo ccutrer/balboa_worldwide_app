@@ -1,7 +1,7 @@
-require 'uri'
+require "uri"
 
-require 'bwa/logger'
-require 'bwa/message'
+require "bwa/logger"
+require "bwa/message"
 
 module BWA
   class Client
@@ -9,15 +9,15 @@ module BWA
 
     def initialize(uri)
       uri = URI.parse(uri)
-      if uri.scheme == 'tcp'
-        require 'socket'
+      if uri.scheme == "tcp"
+        require "socket"
         @io = TCPSocket.new(uri.host, uri.port || 4257)
-      elsif uri.scheme == 'telnet' || uri.scheme == 'rfc2217'
-        require 'net/telnet/rfc2217'
+      elsif uri.scheme == "telnet" || uri.scheme == "rfc2217"
+        require "net/telnet/rfc2217"
         @io = Net::Telnet::RFC2217.new("Host" => uri.host, "Port" => uri.port || 23, "baud" => 115200)
         @queue = []
       else
-        require 'ccutrer-serialport'
+        require "ccutrer-serialport"
         @io = CCutrer::SerialPort.new(uri.path, baud: 115200)
         @queue = []
       end
@@ -117,6 +117,7 @@ module BWA
 
     def set_pump(i, desired)
       return unless last_status && last_control_configuration2
+
       times = (desired - last_status.pumps[i - 1]) % (last_control_configuration2.pumps[i - 1] + 1)
       times.times do
         toggle_pump(i)
@@ -137,11 +138,13 @@ module BWA
     def set_mister(desired)
       return unless last_status
       return if last_status.mister == desired
+
       toggle_mister
     end
 
     def set_blower(desired)
       return unless last_status && last_control_configuration2
+
       times = (desired - last_status.blower) % (last_control_configuration2.blower + 1)
       times.times do
         toggle_blower
@@ -152,6 +155,7 @@ module BWA
     def set_hold(desired)
       return unless last_status
       return if last_status.hold == desired
+
       toggle_hold
     end
 
@@ -171,17 +175,19 @@ module BWA
 
     def set_temperature_scale(scale)
       raise ArgumentError, "scale must be :fahrenheit or :celsius" unless %I{fahrenheit :celsius}.include?(scale)
+
       send_message(Messages::SetTemperatureScale.new(scale))
     end
 
     def set_filtercycles(changedItem, changedValue)
-      #changedItem - String name of item that was changed
-      #changedValue - String value of the item that changed
+      # changedItem - String name of item that was changed
+      # changedValue - String value of the item that changed
       return unless last_filter_configuration
+
       send_message(Messages::FilterCycles.new(changedItem, changedValue, @last_filter_configuration))
       request_filter_configuration
-      #Need to wait briefly to let the next message come in from the spa in order to update last_filter_configuration
-      #needed when automation quickly sets multiple values one right after the other
+      # Need to wait briefly to let the next message come in from the spa in order to update last_filter_configuration
+      # needed when automation quickly sets multiple values one right after the other
       sleep(0.2)
     end
 
@@ -192,6 +198,7 @@ module BWA
     def set_temperature_range(desired)
       return unless last_status
       return if last_status.temperature_range == desired
+
       toggle_temperature_range
     end
 
@@ -203,15 +210,16 @@ module BWA
     def set_heating_mode(desired)
       raise ArgumentError, "heating_mode must be :ready or :rest" unless %I{ready rest}.include?(desired)
       return unless last_status
+
       times = if last_status.heating_mode == :ready && desired == :rest ||
                  last_status.heating_mode == :rest && desired == :ready ||
                  last_status.heating_mode == :ready_in_rest && desired == :rest
-          1
-        elsif last_status.heating_mode == :ready_in_rest && desired == :ready
-          2
-        else
-          0
-        end
+                1
+              elsif last_status.heating_mode == :ready_in_rest && desired == :ready
+                2
+              else
+                0
+              end
       times.times { toggle_heating_mode }
     end
   end

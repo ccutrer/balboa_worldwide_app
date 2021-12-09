@@ -1,6 +1,6 @@
-require 'socket'
-require 'bwa/logger'
-require 'bwa/message'
+require "socket"
+require "bwa/logger"
+require "bwa/message"
 
 module BWA
   class Proxy
@@ -42,7 +42,7 @@ module BWA
         end
         data_length = leftover_data[1].ord
         data = leftover_data[0...(data_length + 2)]
-        leftover_data = leftover_data[(data_length + 2)..-1] || ''
+        leftover_data = leftover_data[(data_length + 2)..-1] || ""
         begin
           message = Message.parse(data)
           BWA.logger.info "#{tag}: #{message.inspect}"

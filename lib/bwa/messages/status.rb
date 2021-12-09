@@ -43,15 +43,15 @@ module BWA
 
       def parse(data)
         flags = data[0].ord
-        self.hold = (flags & 0x05 != 0 )
+        self.hold = (flags & 0x05 != 0)
 
         flags = data[1].ord
         self.priming = (flags & 0x01 == 0x01)
         flags = data[5].ord
         self.heating_mode = case flags & 0x03
-                              when 0x00; :ready
-                              when 0x01; :rest
-                              when 0x02; :ready_in_rest
+                            when 0x00; :ready
+                            when 0x01; :rest
+                            when 0x02; :ready_in_rest
                             end
         flags = data[9].ord
         self.temperature_scale = (flags & 0x01 == 0x01) ? :celsius : :fahrenheit
@@ -96,9 +96,9 @@ module BWA
         data[0] = (hold ? 0x05 : 0x00).chr
         data[1] = (priming ? 0x01 : 0x00).chr
         data[5] = (case heating_mode
-                     when :ready; 0x00
-                     when :rest; 0x01
-                     when :ready_in_rest; 0x02
+                   when :ready; 0x00
+                   when :rest; 0x01
+                   when :ready_in_rest; 0x02
                    end).chr
         flags = 0
         flags |= 0x01 if temperature_scale == :celsius
@@ -135,21 +135,21 @@ module BWA
         if value != @temperature_scale
           if value == :fahrenheit
             if current_temperature
-              self.current_temperature *= 9.0/5
+              self.current_temperature *= 9.0 / 5
               self.current_temperature += 32
               self.current_temperature = current_temperature.round
             end
-            self.set_temperature *= 9.0/5
+            self.set_temperature *= 9.0 / 5
             self.set_temperature += 32
             self.set_temperature = set_temperature.round
           else
             if current_temperature
               self.current_temperature -= 32
-              self.current_temperature *= 5.0/90
+              self.current_temperature *= 5.0 / 90
               self.current_temperature = (current_temperature * 2).round / 2.0
             end
             self.set_temperature -= 32
-            self.set_temperature *= 5.0/9
+            self.set_temperature *= 5.0 / 9
             self.set_temperature = (set_temperature * 2).round / 2.0
           end
         end
@@ -163,7 +163,7 @@ module BWA
         items << "hold" if hold
         items << "priming" if priming
         items << self.class.format_time(hour, minute, twenty_four_hour_time)
-        items << "#{current_temperature || '--'}/#{set_temperature}º#{temperature_scale.to_s[0].upcase}"
+        items << "#{current_temperature || "--"}/#{set_temperature}º#{temperature_scale.to_s[0].upcase}"
         items << "filter=#{filter.inspect}"
         items << heating_mode
         items << "heating" if heating
@@ -175,7 +175,7 @@ module BWA
         items << "aux=#{aux.inspect}"
         items << "mister" if mister
 
-        result << items.join(' ') << ">"
+        result << items.join(" ") << ">"
       end
     end
   end

@@ -1,1 +1,1 @@
-require 'bwa/client'
+require "bwa/client"

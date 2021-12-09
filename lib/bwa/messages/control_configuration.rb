@@ -8,7 +8,7 @@ module BWA
 
       def initialize
         super
-        @model = ''
+        @model = ""
         @version = 0
       end
 
@@ -69,7 +69,7 @@ module BWA
         items << "mister" if mister
         items << "aux=#{aux.inspect}"
 
-        result << items.join(' ') << ">"
+        result << items.join(" ") << ">"
       end
     end
   end

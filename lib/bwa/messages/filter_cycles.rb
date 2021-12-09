@@ -2,9 +2,9 @@ module BWA
   module Messages
     class FilterCycles < Message
       attr_accessor :filter1_hour, :filter1_minute, :filter1_duration_hours, :filter1_duration_minutes,
-                  :filter2_enabled,
-                  :filter2_hour, :filter2_minute, :filter2_duration_hours, :filter2_duration_minutes,
-                  :changedItem, :changedValue
+                    :filter2_enabled,
+                    :filter2_hour, :filter2_minute, :filter2_duration_hours, :filter2_duration_minutes,
+                    :changedItem, :changedValue
 
       MESSAGE_TYPE = "\xbf\x23".force_encoding(Encoding::ASCII_8BIT)
       MESSAGE_LENGTH = 8
@@ -22,7 +22,6 @@ module BWA
           self.filter2_duration_hours = if changedItem == "filter2durationhours" then changedValue.to_i else oldValues.filter2_duration_hours end
           self.filter2_duration_minutes = if changedItem == "filter2durationminutes" then changedValue.to_i else oldValues.filter2_duration_minutes end
         end
-
       end
 
       def parse(data)
@@ -40,29 +39,27 @@ module BWA
       end
 
       def serialize
-        data = self.filter1_hour.chr 
+        data = self.filter1_hour.chr
         data += self.filter1_minute.chr
-        data += self.filter1_duration_hours.chr 
+        data += self.filter1_duration_hours.chr
         data += self.filter1_duration_minutes.chr
 
-        #The filter2 start hour is merged with the filter2 enable (who thought that was a good idea?) The high order bit of the byte is a flag
-        #to indicate this so we have to do a bit of different processing to set that.
-        #Get the filter 2 start hour
-        starthour =  self.filter2_hour 
+        # The filter2 start hour is merged with the filter2 enable (who thought that was a good idea?) The high order bit of the byte is a flag
+        # to indicate this so we have to do a bit of different processing to set that.
+        # Get the filter 2 start hour
+        starthour = self.filter2_hour
 
-        #Check to see if we want filter 2 enabled (either because it changed or from the current configuration)
-        starthour |=  0x80 if self.filter2_enabled
+        # Check to see if we want filter 2 enabled (either because it changed or from the current configuration)
+        starthour |= 0x80 if self.filter2_enabled
 
         data += starthour.chr
 
         data += self.filter2_minute.chr
-        data += self.filter2_duration_hours.chr 
+        data += self.filter2_duration_hours.chr
         data += self.filter2_duration_minutes.chr
 
         super(data)
-
       end
- 
 
       def inspect
         result = "#<BWA::Messages::FilterCycles "
@@ -72,7 +69,7 @@ module BWA
         result << "@"
         result << self.class.format_time(filter1_hour, filter1_minute)
 
-        result << " filter2(#{@filter2_enabled ? 'enabled' : 'disabled'}) "
+        result << " filter2(#{@filter2_enabled ? "enabled" : "disabled"}) "
         result << self.class.format_duration(filter2_duration_hours, filter2_duration_minutes)
         result << "@"
         result << self.class.format_time(filter2_hour, filter2_minute)

@@ -1,6 +1,6 @@
-require 'socket'
-require 'bwa/logger'
-require 'bwa/message'
+require "socket"
+require "bwa/logger"
+require "bwa/message"
 
 module BWA
   class Server
@@ -12,9 +12,9 @@ module BWA
     def run
       loop do
         socket = @listen_socket.accept
-        #Thread.new do
-          run_client(socket)
-        #end
+        # Thread.new do
+        run_client(socket)
+        # end
         break
       end
     end
@@ -34,6 +34,7 @@ module BWA
         if IO.select([socket], nil, nil, 1)
           data = socket.recv(128)
           break if data.empty?
+
           begin
             message = Message.parse(data)
             BWA.logger.info BWA.raw2str(message.raw_data)
@@ -80,11 +81,13 @@ module BWA
     end
 
     def send_configuration(socket)
-      send_message(socket, "\x0a\xbf\x94\x02\x02\x80\x00\x15\x27\x10\xab\xd2\x00\x00\x00\x00\x00\x00\x00\x00\x00\x15\x27\xff\xff\x10\xab\xd2")
+      send_message(socket,
+                   "\x0a\xbf\x94\x02\x02\x80\x00\x15\x27\x10\xab\xd2\x00\x00\x00\x00\x00\x00\x00\x00\x00\x15\x27\xff\xff\x10\xab\xd2")
     end
 
     def send_control_configuration(socket)
-      send_message(socket, "\x0a\xbf\x24\x64\xdc\x11\x00\x42\x46\x42\x50\x32\x30\x20\x20\x01\x3d\x12\x38\x2e\x01\x0a\x04\x00")
+      send_message(socket,
+                   "\x0a\xbf\x24\x64\xdc\x11\x00\x42\x46\x42\x50\x32\x30\x20\x20\x01\x3d\x12\x38\x2e\x01\x0a\x04\x00")
     end
 
     def send_control_configuration2(socket)

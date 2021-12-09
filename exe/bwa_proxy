@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
-require 'bwa/discovery'
-require 'bwa/proxy'
+require "bwa/discovery"
+require "bwa/proxy"
 
 Thread.new do
   BWA::Discovery.advertise

@@ -1,5 +1,5 @@
-require 'socket'
-require 'bwa/logger'
+require "socket"
+require "bwa/logger"
 
 module BWA
   class Discovery
@@ -8,7 +8,7 @@ module BWA
         socket = UDPSocket.new
         socket.bind("0.0.0.0", 0)
         socket.setsockopt(Socket::SOL_SOCKET, Socket::SO_BROADCAST, true)
-        socket.sendmsg("Discovery: Who is out there?", 0, Socket.sockaddr_in(30303, '255.255.255.255'))
+        socket.sendmsg("Discovery: Who is out there?", 0, Socket.sockaddr_in(30303, "255.255.255.255"))
         spas = {}
         loop do
           if IO.select([socket], nil, nil, timeout)
@@ -33,7 +33,8 @@ module BWA
         msg = "BWGSPA\r\n00-15-27-00-00-01\r\n"
         loop do
           data, addr = socket.recvfrom(32)
-          next unless data == 'Discovery: Who is out there?'
+          next unless data == "Discovery: Who is out there?"
+
           ip = addr.last
           BWA.logger.info "Advertising to #{ip}"
           socket.sendmsg(msg, 0, Socket.sockaddr_in(addr[1], ip))

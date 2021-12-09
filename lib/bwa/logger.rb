@@ -1,4 +1,4 @@
-require 'logger'
+require "logger"
 
 module BWA
   # This module logs to stdout by default, or you can provide a logger as BWA.logger.
@@ -25,7 +25,7 @@ module BWA
     def logger
       @logger ||= Logger.new(STDOUT).tap do |log|
         STDOUT.sync = true
-        log.level = ENV.fetch("LOG_LEVEL","WARN")
+        log.level = ENV.fetch("LOG_LEVEL", "WARN")
         log.formatter = proc do |severity, datetime, progname, msg|
           "#{severity[0..0]}, #{msg2logstr(msg)}\n"
         end
@@ -42,7 +42,7 @@ module BWA
       when ::String
         msg
       when ::Exception
-        "#{ msg.message } (#{ msg.class })\n#{ msg.backtrace.join("\n") if msg.backtrace }"
+        "#{msg.message} (#{msg.class})\n#{msg.backtrace.join("\n") if msg.backtrace}"
       else
         msg.inspect
       end
