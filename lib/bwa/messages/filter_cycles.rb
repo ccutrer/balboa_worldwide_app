@@ -6,27 +6,27 @@ module BWA
       attr_accessor :filter1_hour, :filter1_minute, :filter1_duration_hours, :filter1_duration_minutes,
                     :filter2_enabled,
                     :filter2_hour, :filter2_minute, :filter2_duration_hours, :filter2_duration_minutes,
-                    :changedItem, :changedValue
+                    :changed_item, :changed_value
 
       MESSAGE_TYPE = "\xbf\x23".force_encoding(Encoding::ASCII_8BIT)
       MESSAGE_LENGTH = 8
 
-      def initialize(changedItem = nil, changedValue = nil, oldValues = nil)
+      def initialize(changed_item = nil, changed_value = nil, old_values = nil)
         super()
-        unless changedItem.nil?
-          self.filter1_hour = changedItem == "filter1hour" ? changedValue.to_i : oldValues.filter1_hour
-          self.filter1_minute = changedItem == "filter1minute" ? changedValue.to_i : oldValues.filter1_minute
-          self.filter1_duration_hours = changedItem == "filter1durationhours" ? changedValue.to_i : oldValues.filter1_duration_hours
-          self.filter1_duration_minutes = changedItem == "filter1durationminutes" ? changedValue.to_i : oldValues.filter1_duration_minutes
-          self.filter2_enabled = if changedItem == "filter2enabled"
-                                   changedValue == "true"
+        unless changed_item.nil?
+          self.filter1_hour = changed_item == "filter1hour" ? changed_value.to_i : old_values.filter1_hour
+          self.filter1_minute = changed_item == "filter1minute" ? changed_value.to_i : old_values.filter1_minute
+          self.filter1_duration_hours = changed_item == "filter1durationhours" ? changed_value.to_i : old_values.filter1_duration_hours
+          self.filter1_duration_minutes = changed_item == "filter1durationminutes" ? changed_value.to_i : old_values.filter1_duration_minutes
+          self.filter2_enabled = if changed_item == "filter2enabled"
+                                   changed_value == "true"
                                  else
-                                   oldValues.filter2_enabled
+                                   old_values.filter2_enabled
                                  end
-          self.filter2_hour = changedItem == "filter2hour" ? changedValue.to_i : oldValues.filter2_hour
-          self.filter2_minute = changedItem == "filter2minute" ? changedValue.to_i : oldValues.filter2_minute
-          self.filter2_duration_hours = changedItem == "filter2durationhours" ? changedValue.to_i : oldValues.filter2_duration_hours
-          self.filter2_duration_minutes = changedItem == "filter2durationminutes" ? changedValue.to_i : oldValues.filter2_duration_minutes
+          self.filter2_hour = changed_item == "filter2hour" ? changed_value.to_i : old_values.filter2_hour
+          self.filter2_minute = changed_item == "filter2minute" ? changed_value.to_i : old_values.filter2_minute
+          self.filter2_duration_hours = changed_item == "filter2durationhours" ? changed_value.to_i : old_values.filter2_duration_hours
+          self.filter2_duration_minutes = changed_item == "filter2durationminutes" ? changed_value.to_i : old_values.filter2_duration_minutes
         end
       end
 

@@ -35,7 +35,7 @@ module BWA
       # Don't log messages of these types, even in DEBUG mode.
       # They are very frequent and would swamp the logs.
       def common_messages
-        @COMMON_MESSAGES ||= begin
+        @common_messages ||= begin
           msgs = []
           unless BWA.verbosity >= 1
             msgs += [
@@ -53,7 +53,6 @@ module BWA
           end
           msgs
         end
-        @COMMON_MESSAGES
       end
 
       def parse(data)

@@ -11,6 +11,8 @@ Metrics:
 
 Lint/UnusedBlockArgument:
   AutoCorrect: false
+Lint/UnusedMethodArgument:
+  AutoCorrect: false
 
 Performance/Casecmp:
   AutoCorrect: false

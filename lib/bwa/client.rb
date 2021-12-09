@@ -104,12 +104,12 @@ module BWA
       send_message(Messages::ToggleItem.new(item))
     end
 
-    def toggle_pump(i)
-      toggle_item(i + 3)
+    def toggle_pump(index)
+      toggle_item(index + 3)
     end
 
-    def toggle_light(i)
-      toggle_item(i + 0x10)
+    def toggle_light(index)
+      toggle_item(index + 0x10)
     end
 
     def toggle_mister
@@ -124,34 +124,34 @@ module BWA
       toggle_item(:hold)
     end
 
-    def set_pump(i, desired)
+    def set_pump(index, desired)
       return unless last_status && last_control_configuration2
 
-      times = (desired - last_status.pumps[i - 1]) % (last_control_configuration2.pumps[i - 1] + 1)
+      times = (desired - last_status.pumps[index - 1]) % (last_control_configuration2.pumps[index - 1] + 1)
       times.times do
-        toggle_pump(i)
+        toggle_pump(index)
         sleep(0.1)
       end
     end
 
     %w[light aux].each do |type|
       class_eval <<-RUBY, __FILE__, __LINE__ + 1
-        def set_#{type}(i, desired)
+        def set_#{type}(index, desired)
           return unless last_status
-          return if last_status.#{type}s[i - 1] == desired
-          toggle_#{type}(i)
+          return if last_status.#{type}s[index - 1] == desired
+          toggle_#{type}(index)
         end
       RUBY
     end
 
-    def set_mister(desired)
+    def mister=(desired)
       return unless last_status
       return if last_status.mister == desired
 
       toggle_mister
     end
 
-    def set_blower(desired)
+    def blower=(desired)
       return unless last_status && last_control_configuration2
 
       times = (desired - last_status.blower) % (last_control_configuration2.blower + 1)
@@ -161,7 +161,7 @@ module BWA
       end
     end
 
-    def set_hold(desired)
+    def hold=(desired)
       return unless last_status
       return if last_status.hold == desired
 
@@ -170,7 +170,7 @@ module BWA
 
     # high range is 80-106 for F, 26-40 for C (by 0.5)
     # low range is 50-99 for F, 10-26 for C (by 0.5)
-    def set_temperature(desired)
+    def set_temperature=(desired) # rubocop:disable Naming/AccessorMethodName
       return unless last_status
       return if last_status.set_temperature == desired
 
@@ -182,18 +182,18 @@ module BWA
       send_message(Messages::SetTime.new(hour, minute, twenty_four_hour_time))
     end
 
-    def set_temperature_scale(scale)
+    def temperature_scale=(scale)
       raise ArgumentError, "scale must be :fahrenheit or :celsius" unless %I[fahrenheit celsius].include?(scale)
 
       send_message(Messages::SetTemperatureScale.new(scale))
     end
 
-    def set_filtercycles(changedItem, changedValue)
-      # changedItem - String name of item that was changed
-      # changedValue - String value of the item that changed
+    def set_filtercycles(changed_item, changed_value)
+      # changed_item - String name of item that was changed
+      # changed_value - String value of the item that changed
       return unless last_filter_configuration
 
-      send_message(Messages::FilterCycles.new(changedItem, changedValue, @last_filter_configuration))
+      send_message(Messages::FilterCycles.new(changed_item, changed_value, @last_filter_configuration))
       request_filter_configuration
       # Need to wait briefly to let the next message come in from the spa in order to update last_filter_configuration
       # needed when automation quickly sets multiple values one right after the other
@@ -204,7 +204,7 @@ module BWA
       toggle_item(0x50)
     end
 
-    def set_temperature_range(desired)
+    def temperature_range=(desired)
       return unless last_status
       return if last_status.temperature_range == desired
 
@@ -216,7 +216,7 @@ module BWA
     end
 
     HEATING_MODES = %I[ready rest ready_in_rest].freeze
-    def set_heating_mode(desired)
+    def heating_mode=(desired)
       raise ArgumentError, "heating_mode must be :ready or :rest" unless %I[ready rest].include?(desired)
       return unless last_status
 

@@ -158,16 +158,16 @@ class MQTTBridge
         next @bwa.toggle_hold if value == "toggle"
         next unless %w[true false].include?(value)
 
-        @bwa.set_hold(value == "true")
+        @bwa.hold = value == "true"
       when "spa/heatingmode/set"
         next @bwa.toggle_heating_mode if value == "toggle"
         next unless %w[ready rest].include?(value)
 
-        @bwa.set_heating_mode(value.to_sym)
+        @bwa.heating_mode = value.to_sym
       when "spa/temperaturescale/set"
         next unless %w[fahrenheit celsius].include?(value)
 
-        @bwa.set_temperature_scale(value.to_sym)
+        @bwa.temperature_scale = value.to_sym
       when "spa/24htime/set"
         next unless %w[true false].include?(value)
 
@@ -177,7 +177,7 @@ class MQTTBridge
         next @bwa.toggle_temperature_range if value == "toggle"
         next unless %w[low high].include?(value)
 
-        @bwa.set_temperature_range(value.to_sym)
+        @bwa.temperature_range = value.to_sym
       when %r{^spa/pump([1-6])/set$}
         next @bwa.toggle_pump($1.to_i) if value == "toggle"
 
@@ -191,13 +191,13 @@ class MQTTBridge
         next @bwa.toggle_mister if value == "toggle"
         next unless %w[true false].include?(value)
 
-        @bwa.set_mister(value == "true")
+        @bwa.mister = value == "true"
       when "spa/blower/set"
         next @bwa.toggle_blower if value == "toggle"
 
-        @bwa.set_blower(value.to_i)
+        @bwa.blower = value.to_i
       when "spa/settemperature/set"
-        @bwa.set_temperature(value.to_f)
+        @bwa.set_temperature = value.to_f
       when %r{^spa/(filter[12](hour|minute|durationhours|durationminutes|enabled))/set$}
         @bwa.set_filtercycles($1, value)
       end
@@ -278,22 +278,22 @@ class MQTTBridge
     end
   end
 
-  def publish_hass_discovery_pumps(i, _speeds)
-    publish_hass_entity(type: "switch", name: "Pump #{i}", subtopic: "pump#{i}", payload_on: "toggle",
+  def publish_hass_discovery_pumps(index, _speeds)
+    publish_hass_entity(type: "switch", name: "Pump #{index}", subtopic: "pump#{index}", payload_on: "toggle",
                         payload_off: "toggle", state_on: "2", state_off: "0", icon: "mdi:chart-bubble")
   end
 
-  def publish_hass_discovery_things(type, i)
+  def publish_hass_discovery_things(type, index)
     # Things - Lights and such
     case type
     when :light
-      publish_hass_entity(type: "switch", name: "#{type} #{i}", subtopic: "#{type}#{i}",
+      publish_hass_entity(type: "switch", name: "#{type} #{index}", subtopic: "#{type}#{index}",
                           icon: "mdi:car-parking-lights")
     when :mister
-      publish_hass_entity(type: "switch", name: "#{type} #{i}", subtopic: "#{type}#{i}",
+      publish_hass_entity(type: "switch", name: "#{type} #{index}", subtopic: "#{type}#{index}",
                           icon: "mdi:sprinkler-fire")
     when :blower
-      publish_hass_entity(type: "switch", name: "#{type} #{i}", subtopic: "#{type}#{i}",
+      publish_hass_entity(type: "switch", name: "#{type} #{index}", subtopic: "#{type}#{index}",
                           icon: "mdi:chart-bubble")
     end
   end
@@ -432,26 +432,26 @@ class MQTTBridge
     publish("spa/filter2/$datatype", "boolean")
   end
 
-  def publish_pump(i, speeds)
-    publish("spa/pump#{i}/$name", "Pump #{i} speed")
-    publish("spa/pump#{i}/$datatype", "integer")
-    publish("spa/pump#{i}/$format", "0:#{speeds}")
-    publish("spa/pump#{i}/$settable", "true")
-    subscribe("spa/pump#{i}/set")
+  def publish_pump(index, speeds)
+    publish("spa/pump#{index}/$name", "Pump #{index} speed")
+    publish("spa/pump#{index}/$datatype", "integer")
+    publish("spa/pump#{index}/$format", "0:#{speeds}")
+    publish("spa/pump#{index}/$settable", "true")
+    subscribe("spa/pump#{index}/set")
 
-    @things << "pump#{i}"
+    @things << "pump#{index}"
     publish_hass_discovery_pumps(i, speeds)
     publish_nodes
   end
 
-  def publish_thing(type, i)
-    publish("spa/#{type}#{i}/$name", "#{type} #{i}")
-    publish("spa/#{type}#{i}/$datatype", "boolean")
-    publish("spa/#{type}#{i}/$settable", "true")
-    subscribe("spa/#{type}#{i}/set")
+  def publish_thing(type, index)
+    publish("spa/#{type}#{index}/$name", "#{type} #{index}")
+    publish("spa/#{type}#{index}/$datatype", "boolean")
+    publish("spa/#{type}#{index}/$settable", "true")
+    subscribe("spa/#{type}#{index}/set")
 
-    @things << "#{type}#{i}"
-    publish_hass_discovery_things(type, i)
+    @things << "#{type}#{index}"
+    publish_hass_discovery_things(type, index)
     publish_nodes
   end
 
