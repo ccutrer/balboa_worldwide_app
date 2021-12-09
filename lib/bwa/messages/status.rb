@@ -49,9 +49,9 @@ module BWA
         self.priming = (flags & 0x01 == 0x01)
         flags = data[5].ord
         self.heating_mode = case flags & 0x03
-                            when 0x00; :ready
-                            when 0x01; :rest
-                            when 0x02; :ready_in_rest
+                            when 0x00 then :ready
+                            when 0x01 then :rest
+                            when 0x02 then :ready_in_rest
                             end
         flags = data[9].ord
         self.temperature_scale = (flags & 0x01 == 0x01) ? :celsius : :fahrenheit
@@ -83,11 +83,11 @@ module BWA
         self.hour = data[3].ord
         self.minute = data[4].ord
         self.current_temperature = data[2].ord
-        self.current_temperature = nil if self.current_temperature == 0xff
+        self.current_temperature = nil if current_temperature == 0xff
         self.set_temperature = data[20].ord
         if temperature_scale == :celsius
-          self.current_temperature /= 2.0 if self.current_temperature
-          self.set_temperature /= 2.0 if self.set_temperature
+          self.current_temperature /= 2.0 if current_temperature
+          self.set_temperature /= 2.0 if set_temperature
         end
       end
 
@@ -96,9 +96,9 @@ module BWA
         data[0] = (hold ? 0x05 : 0x00).chr
         data[1] = (priming ? 0x01 : 0x00).chr
         data[5] = (case heating_mode
-                   when :ready; 0x00
-                   when :rest; 0x01
-                   when :ready_in_rest; 0x02
+                   when :ready then 0x00
+                   when :rest then 0x01
+                   when :ready_in_rest then 0x02
                    end).chr
         flags = 0
         flags |= 0x01 if temperature_scale == :celsius

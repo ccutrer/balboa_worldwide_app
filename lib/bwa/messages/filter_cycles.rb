@@ -11,16 +11,20 @@ module BWA
 
       def initialize(changedItem = nil, changedValue = nil, oldValues = nil)
         super()
-        if changedItem != nil then
-          self.filter1_hour = if changedItem == "filter1hour" then changedValue.to_i else oldValues.filter1_hour end
-          self.filter1_minute = if changedItem == "filter1minute" then changedValue.to_i else oldValues.filter1_minute end
-          self.filter1_duration_hours = if changedItem == "filter1durationhours" then changedValue.to_i else oldValues.filter1_duration_hours end
-          self.filter1_duration_minutes = if changedItem == "filter1durationminutes" then changedValue.to_i else oldValues.filter1_duration_minutes end
-          self.filter2_enabled = if changedItem == "filter2enabled" then (changedValue == "true" ? true : false) else oldValues.filter2_enabled end
-          self.filter2_hour = if changedItem == "filter2hour" then changedValue.to_i else oldValues.filter2_hour end
-          self.filter2_minute = if changedItem == "filter2minute" then changedValue.to_i else oldValues.filter2_minute end
-          self.filter2_duration_hours = if changedItem == "filter2durationhours" then changedValue.to_i else oldValues.filter2_duration_hours end
-          self.filter2_duration_minutes = if changedItem == "filter2durationminutes" then changedValue.to_i else oldValues.filter2_duration_minutes end
+        unless changedItem.nil?
+          self.filter1_hour = changedItem == "filter1hour" ? changedValue.to_i : oldValues.filter1_hour
+          self.filter1_minute = changedItem == "filter1minute" ? changedValue.to_i : oldValues.filter1_minute
+          self.filter1_duration_hours = changedItem == "filter1durationhours" ? changedValue.to_i : oldValues.filter1_duration_hours
+          self.filter1_duration_minutes = changedItem == "filter1durationminutes" ? changedValue.to_i : oldValues.filter1_duration_minutes
+          self.filter2_enabled = if changedItem == "filter2enabled"
+                                   changedValue == "true"
+                                 else
+                                   oldValues.filter2_enabled
+                                 end
+          self.filter2_hour = changedItem == "filter2hour" ? changedValue.to_i : oldValues.filter2_hour
+          self.filter2_minute = changedItem == "filter2minute" ? changedValue.to_i : oldValues.filter2_minute
+          self.filter2_duration_hours = changedItem == "filter2durationhours" ? changedValue.to_i : oldValues.filter2_duration_hours
+          self.filter2_duration_minutes = changedItem == "filter2durationminutes" ? changedValue.to_i : oldValues.filter2_duration_minutes
         end
       end
 
@@ -39,24 +43,24 @@ module BWA
       end
 
       def serialize
-        data = self.filter1_hour.chr
-        data += self.filter1_minute.chr
-        data += self.filter1_duration_hours.chr
-        data += self.filter1_duration_minutes.chr
+        data = filter1_hour.chr
+        data += filter1_minute.chr
+        data += filter1_duration_hours.chr
+        data += filter1_duration_minutes.chr
 
         # The filter2 start hour is merged with the filter2 enable (who thought that was a good idea?) The high order bit of the byte is a flag
         # to indicate this so we have to do a bit of different processing to set that.
         # Get the filter 2 start hour
-        starthour = self.filter2_hour
+        starthour = filter2_hour
 
         # Check to see if we want filter 2 enabled (either because it changed or from the current configuration)
-        starthour |= 0x80 if self.filter2_enabled
+        starthour |= 0x80 if filter2_enabled
 
         data += starthour.chr
 
-        data += self.filter2_minute.chr
-        data += self.filter2_duration_hours.chr
-        data += self.filter2_duration_minutes.chr
+        data += filter2_minute.chr
+        data += filter2_duration_hours.chr
+        data += filter2_duration_minutes.chr
 
         super(data)
       end

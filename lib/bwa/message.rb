@@ -25,9 +25,9 @@ module BWA
 
       # Ignore (parse and throw away) messages of these types.
       IGNORED_MESSAGES = [
-        "\xbf\x00".force_encoding(Encoding::ASCII_8BIT),  # request for new clients
+        "\xbf\x00".force_encoding(Encoding::ASCII_8BIT), # request for new clients
         "\xbf\xe1".force_encoding(Encoding::ASCII_8BIT),
-        "\xbf\x07".force_encoding(Encoding::ASCII_8BIT),  # nothing to send
+        "\xbf\x07".force_encoding(Encoding::ASCII_8BIT) # nothing to send
       ]
 
       # Don't log messages of these types, even in DEBUG mode.
@@ -35,16 +35,20 @@ module BWA
       def common_messages
         @COMMON_MESSAGES ||= begin
           msgs = []
-          msgs += [
-            Messages::Status::MESSAGE_TYPE,
-            "\xbf\xe1".force_encoding(Encoding::ASCII_8BIT),
-          ] unless BWA.verbosity >= 1
-          msgs += [
-            "\xbf\x00".force_encoding(Encoding::ASCII_8BIT),
-            "\xbf\xe1".force_encoding(Encoding::ASCII_8BIT),
-            Messages::Ready::MESSAGE_TYPE,
-            "\xbf\x07".force_encoding(Encoding::ASCII_8BIT),
-          ] unless BWA.verbosity >= 2
+          unless BWA.verbosity >= 1
+            msgs += [
+              Messages::Status::MESSAGE_TYPE,
+              "\xbf\xe1".force_encoding(Encoding::ASCII_8BIT)
+            ]
+          end
+          unless BWA.verbosity >= 2
+            msgs += [
+              "\xbf\x00".force_encoding(Encoding::ASCII_8BIT),
+              "\xbf\xe1".force_encoding(Encoding::ASCII_8BIT),
+              Messages::Ready::MESSAGE_TYPE,
+              "\xbf\x07".force_encoding(Encoding::ASCII_8BIT)
+            ]
+          end
           msgs
         end
         @COMMON_MESSAGES
@@ -85,8 +89,10 @@ module BWA
 
         message_type = data.slice(offset + 3, 2)
         BWA.logger.debug "discarding invalid data prior to message #{BWA.raw2str(data[0...offset])}" unless offset == 0
-        BWA.logger.debug " read: #{BWA.raw2str(data.slice(offset,
-                                                          length + 2))}" unless common_messages.include?(message_type)
+        unless common_messages.include?(message_type)
+          BWA.logger.debug " read: #{BWA.raw2str(data.slice(offset,
+                                                            length + 2))}"
+        end
 
         src = data[offset + 2].ord
         klass = @messages.find { |k| k::MESSAGE_TYPE == message_type }
@@ -100,8 +106,10 @@ module BWA
                          else
                            length - 5 == klass::MESSAGE_LENGTH
                          end
-          raise InvalidMessage.new("Unrecognized data length (#{length}) for message #{klass}",
-                                   data) unless valid_length
+          unless valid_length
+            raise InvalidMessage.new("Unrecognized data length (#{length}) for message #{klass}",
+                                     data)
+          end
         else
           BWA.logger.info "Unrecognized message type #{BWA.raw2str(message_type)}: #{BWA.raw2str(data.slice(offset,
                                                                                                             length + 2))}"
@@ -139,8 +147,7 @@ module BWA
       @src = 0x0a
     end
 
-    def parse(_data)
-    end
+    def parse(_data); end
 
     def serialize(message = "")
       length = message.length + 5
@@ -150,7 +157,7 @@ module BWA
     end
 
     def inspect
-      "#<#{self.class.name} #{raw_data.unpack("H*").first}>"
+      "#<#{self.class.name} #{raw_data.unpack1("H*")}>"
     end
   end
 end

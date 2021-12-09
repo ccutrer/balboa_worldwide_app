@@ -14,11 +14,11 @@ module BWA
         @io = TCPSocket.new(uri.host, uri.port || 4257)
       elsif uri.scheme == "telnet" || uri.scheme == "rfc2217"
         require "net/telnet/rfc2217"
-        @io = Net::Telnet::RFC2217.new("Host" => uri.host, "Port" => uri.port || 23, "baud" => 115200)
+        @io = Net::Telnet::RFC2217.new("Host" => uri.host, "Port" => uri.port || 23, "baud" => 115_200)
         @queue = []
       else
         require "ccutrer-serialport"
-        @io = CCutrer::SerialPort.new(uri.path, baud: 115200)
+        @io = CCutrer::SerialPort.new(uri.path, baud: 115_200)
         @queue = []
       end
       @src = 0x0a
@@ -45,7 +45,9 @@ module BWA
       end
 
       if message.is_a?(Messages::Ready) && (msg = @queue&.shift)
-        BWA.logger.debug "wrote: #{BWA.raw2str(msg)}" unless BWA.verbosity < 1 && msg[3..4] == Messages::ControlConfigurationRequest::MESSAGE_TYPE
+        unless BWA.verbosity < 1 && msg[3..4] == Messages::ControlConfigurationRequest::MESSAGE_TYPE
+          BWA.logger.debug "wrote: #{BWA.raw2str(msg)}"
+        end
         @io.write(msg)
       end
       @last_status = message.dup if message.is_a?(Messages::Status)
@@ -56,7 +58,7 @@ module BWA
     end
 
     def messages_pending?
-      !!IO.select([@io], nil, nil, 0)
+      !!@io.wait_readable(0)
     end
 
     def drain_message_queue
@@ -66,11 +68,15 @@ module BWA
     def send_message(message)
       message.src = @src
       full_message = message.serialize
-      BWA.logger.info "  to spa: #{message.inspect}" unless BWA.verbosity < 1 && message.is_a?(Messages::ControlConfigurationRequest)
+      unless BWA.verbosity < 1 && message.is_a?(Messages::ControlConfigurationRequest)
+        BWA.logger.info "  to spa: #{message.inspect}"
+      end
       if @queue
         @queue.push(full_message)
       else
-        BWA.logger.debug "wrote: #{BWA.raw2str(full_message)}" unless BWA.verbosity < 1 && message.is_a?(Messages::ControlConfigurationRequest)
+        unless BWA.verbosity < 1 && message.is_a?(Messages::ControlConfigurationRequest)
+          BWA.logger.debug "wrote: #{BWA.raw2str(full_message)}"
+        end
         @io.write(full_message)
       end
     end
@@ -125,7 +131,7 @@ module BWA
       end
     end
 
-    %w{light aux}.each do |type|
+    %w[light aux].each do |type|
       class_eval <<-RUBY, __FILE__, __LINE__ + 1
         def set_#{type}(i, desired)
           return unless last_status
@@ -165,7 +171,7 @@ module BWA
       return unless last_status
       return if last_status.set_temperature == desired
 
-      desired *= 2 if last_status && last_status.temperature_scale == :celsius || desired < 50
+      desired *= 2 if (last_status && last_status.temperature_scale == :celsius) || desired < 50
       send_message(Messages::SetTemperature.new(desired.round))
     end
 
@@ -174,7 +180,7 @@ module BWA
     end
 
     def set_temperature_scale(scale)
-      raise ArgumentError, "scale must be :fahrenheit or :celsius" unless %I{fahrenheit :celsius}.include?(scale)
+      raise ArgumentError, "scale must be :fahrenheit or :celsius" unless %I[fahrenheit celsius].include?(scale)
 
       send_message(Messages::SetTemperatureScale.new(scale))
     end
@@ -206,14 +212,14 @@ module BWA
       toggle_item(:heating_mode)
     end
 
-    HEATING_MODES = %I{ready rest ready_in_rest}.freeze
+    HEATING_MODES = %I[ready rest ready_in_rest].freeze
     def set_heating_mode(desired)
-      raise ArgumentError, "heating_mode must be :ready or :rest" unless %I{ready rest}.include?(desired)
+      raise ArgumentError, "heating_mode must be :ready or :rest" unless %I[ready rest].include?(desired)
       return unless last_status
 
-      times = if last_status.heating_mode == :ready && desired == :rest ||
-                 last_status.heating_mode == :rest && desired == :ready ||
-                 last_status.heating_mode == :ready_in_rest && desired == :rest
+      times = if (last_status.heating_mode == :ready && desired == :rest) ||
+                 (last_status.heating_mode == :rest && desired == :ready) ||
+                 (last_status.heating_mode == :ready_in_rest && desired == :rest)
                 1
               elsif last_status.heating_mode == :ready_in_rest && desired == :ready
                 2

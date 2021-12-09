@@ -49,7 +49,7 @@ module BWA
     end
 
     def raw2str(data)
-      data.unpack("H*").first.gsub!(/(..)/, "\\1 ").chop!
+      data.unpack1("H*").gsub!(/(..)/, "\\1 ").chop!
     end
   end
 end

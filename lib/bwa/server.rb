@@ -31,7 +31,7 @@ module BWA
 
       send_status(socket)
       loop do
-        if IO.select([socket], nil, nil, 1)
+        if socket.wait_readable(1)
           data = socket.recv(128)
           break if data.empty?
 

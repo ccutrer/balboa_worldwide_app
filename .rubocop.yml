@@ -9,6 +9,9 @@ AllCops:
 Metrics:
   Enabled: false
 
+Lint/UnusedBlockArgument:
+  AutoCorrect: false
+
 Performance/Casecmp:
   AutoCorrect: false
 
@@ -20,8 +23,12 @@ Style/DocumentDynamicEvalDefinition:
   Enabled: false
 Style/Documentation:
   Enabled: false
+Style/DoubleNegation:
+  Enabled: false
 Style/HashSyntax:
   EnforcedStyle: ruby19_no_mixed_keys
+Style/ParallelAssignment:
+  Enabled: false
 Style/PercentQLiterals:
   EnforcedStyle: upper_case_q
 Style/PerlBackrefs:

@@ -13,34 +13,34 @@ module BWA
 
       def parse(data)
         self.item = case data[0].ord
-                    when 0x04; :pump1
-                    when 0x05; :pump2
-                    when 0x0c; :blower
-                    when 0x0e; :mister
-                    when 0x11; :light1
-                    when 0x3c; :hold
-                    when 0x50; :temperature_range
-                    when 0x51; :heating_mode
+                    when 0x04 then :pump1
+                    when 0x05 then :pump2
+                    when 0x0c then :blower
+                    when 0x0e then :mister
+                    when 0x11 then :light1
+                    when 0x3c then :hold
+                    when 0x50 then :temperature_range
+                    when 0x51 then :heating_mode
                     else; data[0].ord
                     end
       end
 
       def serialize
         data = "\x00\x00"
-        if item.is_a? Integer
-          data[0] = item.chr
-        else
-          data[0] = (case item
-                     when :pump1; 0x04
-                     when :pump2; 0x05
-                     when :blower; 0x0c
-                     when :mister; 0x0e
-                     when :light1; 0x11
-                     when :hold; 0x3c
-                     when :temperature_range; 0x50
-                     when :heating_mode; 0x51
+        data[0] = if item.is_a? Integer
+                    item.chr
+                  else
+                    (case item
+                     when :pump1 then 0x04
+                     when :pump2 then 0x05
+                     when :blower then 0x0c
+                     when :mister then 0x0e
+                     when :light1 then 0x11
+                     when :hold then 0x3c
+                     when :temperature_range then 0x50
+                     when :heating_mode then 0x51
                      end).chr
-        end
+                  end
         super(data)
       end
 

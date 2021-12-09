@@ -50,100 +50,102 @@ class MQTTBridge
 
     bwa_thread = Thread.new do
       loop do
-        begin
-          message = @bwa.poll
-          next if message.is_a?(BWA::Messages::Ready)
+        message = @bwa.poll
+        next if message.is_a?(BWA::Messages::Ready)
 
-          case message
-          when BWA::Messages::ControlConfiguration
-            publish("spa/$type", message.model)
-            update_hass_devicemodel(message.model)
-          when BWA::Messages::ControlConfiguration2
-            message.pumps.each_with_index do |speed, i|
-              publish_pump(i + 1, speed) if speed != 0
-            end
-            message.lights.each_with_index do |exists, i|
-              publish_thing(:light, i + 1) if exists
-            end
-            message.aux.each_with_index do |exists, i|
-              publish_thing(:aux, i + 1) if exists
-            end
-            publish_mister if message.mister
-            publish_blower(message.blower) if message.blower != 0
-            publish_circpump if message.circ_pump
-            publish("$state", "ready")
-          when BWA::Messages::FilterCycles
-            publish_attribute("spa/filter1hour", message.filter1_hour)
-            publish_attribute("spa/filter1minute", message.filter1_minute)
-            publish_attribute("spa/filter1durationhours", message.filter1_duration_hours)
-            publish_attribute("spa/filter1durationminutes", message.filter1_duration_minutes)
-            publish_attribute("spa/filter2enabled", message.filter2_enabled)
-            publish_attribute("spa/filter2hour", message.filter2_hour)
-            publish_attribute("spa/filter2minute", message.filter2_minute)
-            publish_attribute("spa/filter2durationhours", message.filter2_duration_hours)
-            publish_attribute("spa/filter2durationminutes", message.filter2_duration_minutes)
-            publish_hass_filters
-          when BWA::Messages::Status
-            @bwa.request_control_info unless @bwa.last_control_configuration
-            @bwa.request_control_info2 unless @bwa.last_control_configuration2
-            @bwa.request_filter_configuration unless @bwa.last_filter_configuration
-
-            # make sure time is in sync
-            now = Time.now
-            now_minutes = now.hour * 60 + now.min
-            spa_minutes = message.hour * 60 + message.minute
-            # check the difference in both directions
-            diff = [(spa_minutes - now_minutes) % 1440, 1440 - (spa_minutes - now_minutes) % 1440].min
-
-            # allow a skew of 1 minute, since the seconds will always be off
-            if diff > 1
-              BWA.logger.info "Spa time #{"%02d:%02d" % [message.hour,
-                                                         message.minute]}, actually #{"%02d:%02d" % [now.hour,
-                                                                                                     now.min]}; correcting difference of #{diff} min"
-              @bwa.set_time(now.hour, now.min, message.twenty_four_hour_time)
-            end
-            publish_attribute("spa/hold", message.hold)
-            publish_attribute("spa/priming", message.priming)
-            publish_attribute("spa/heatingmode", message.heating_mode)
-            publish_attribute("spa/temperaturescale", message.temperature_scale)
-            publish_attribute("spa/24htime", message.twenty_four_hour_time)
-            publish_attribute("spa/heating", message.heating)
-            publish_attribute("spa/temperaturerange", message.temperature_range)
-            publish_attribute("spa/currenttemperature", message.current_temperature)
-            publish_attribute("spa/currenttemperature/$unit", "º#{message.temperature_scale.to_s[0].upcase}")
-            publish_attribute("spa/settemperature", message.set_temperature)
-            publish_attribute("spa/settemperature/$unit", "º#{message.temperature_scale.to_s[0].upcase}")
-            if message.temperature_scale == :celsius
-              publish_attribute("spa/currenttemperature/$format", "0:42")
-              publish_attribute("spa/settemperature/$format", message.temperature_range == :high ? "26:40" : "10:26")
-              publish_hass_discovery_settemp(:celsius)
-            else
-              publish_attribute("spa/currenttemperature/$format", "32:108")
-              publish_attribute("spa/settemperature/$format", message.temperature_range == :high ? "80:106" : "50:99")
-              publish_hass_discovery_settemp(:fahrenheit)
-            end
-            publish_attribute("spa/filter1", message.filter[0])
-            publish_attribute("spa/filter2", message.filter[1])
-
-            publish_attribute("spa/circpump", message.circ_pump) if @bwa.last_control_configuration2&.circ_pump
-            publish_attribute("spa/blower", message.blower) if @bwa.last_control_configuration2&.blower.to_i != 0
-            publish_attribute("spa/mister", message.mister) if @bwa.last_control_configuration2&.mister
-            (0..5).each do |i|
-              publish_attribute("spa/pump#{i + 1}",
-                                message.pumps[i]) if @bwa.last_control_configuration2&.pumps&.[](i).to_i != 0
-            end
-            (0..1).each do |i|
-              publish_attribute("spa/light#{i + 1}",
-                                message.lights[i]) if @bwa.last_control_configuration2&.lights&.[](i)
-            end
-            (0..1).each do |i|
-              publish_attribute("spa/aux#{i + 1}", message.lights[i]) if @bwa.last_control_configuration2&.aux&.[](i)
-            end
-
-            # Tell systemd we are still alive and kicking. Ignored if systemd not in use.
-            SdNotify.watchdog
-
+        case message
+        when BWA::Messages::ControlConfiguration
+          publish("spa/$type", message.model)
+          update_hass_devicemodel(message.model)
+        when BWA::Messages::ControlConfiguration2
+          message.pumps.each_with_index do |speed, i|
+            publish_pump(i + 1, speed) if speed != 0
           end
+          message.lights.each_with_index do |exists, i|
+            publish_thing(:light, i + 1) if exists
+          end
+          message.aux.each_with_index do |exists, i|
+            publish_thing(:aux, i + 1) if exists
+          end
+          publish_mister if message.mister
+          publish_blower(message.blower) if message.blower != 0
+          publish_circpump if message.circ_pump
+          publish("$state", "ready")
+        when BWA::Messages::FilterCycles
+          publish_attribute("spa/filter1hour", message.filter1_hour)
+          publish_attribute("spa/filter1minute", message.filter1_minute)
+          publish_attribute("spa/filter1durationhours", message.filter1_duration_hours)
+          publish_attribute("spa/filter1durationminutes", message.filter1_duration_minutes)
+          publish_attribute("spa/filter2enabled", message.filter2_enabled)
+          publish_attribute("spa/filter2hour", message.filter2_hour)
+          publish_attribute("spa/filter2minute", message.filter2_minute)
+          publish_attribute("spa/filter2durationhours", message.filter2_duration_hours)
+          publish_attribute("spa/filter2durationminutes", message.filter2_duration_minutes)
+          publish_hass_filters
+        when BWA::Messages::Status
+          @bwa.request_control_info unless @bwa.last_control_configuration
+          @bwa.request_control_info2 unless @bwa.last_control_configuration2
+          @bwa.request_filter_configuration unless @bwa.last_filter_configuration
+
+          # make sure time is in sync
+          now = Time.now
+          now_minutes = (now.hour * 60) + now.min
+          spa_minutes = (message.hour * 60) + message.minute
+          # check the difference in both directions
+          diff = [(spa_minutes - now_minutes) % 1440, 1440 - ((spa_minutes - now_minutes) % 1440)].min
+
+          # allow a skew of 1 minute, since the seconds will always be off
+          if diff > 1
+            BWA.logger.info "Spa time #{format("%02d:%02d", message.hour,
+                                               message.minute)}, actually #{format("%02d:%02d", now.hour,
+                                                                                   now.min)}; correcting difference of #{diff} min"
+            @bwa.set_time(now.hour, now.min, message.twenty_four_hour_time)
+          end
+          publish_attribute("spa/hold", message.hold)
+          publish_attribute("spa/priming", message.priming)
+          publish_attribute("spa/heatingmode", message.heating_mode)
+          publish_attribute("spa/temperaturescale", message.temperature_scale)
+          publish_attribute("spa/24htime", message.twenty_four_hour_time)
+          publish_attribute("spa/heating", message.heating)
+          publish_attribute("spa/temperaturerange", message.temperature_range)
+          publish_attribute("spa/currenttemperature", message.current_temperature)
+          publish_attribute("spa/currenttemperature/$unit", "º#{message.temperature_scale.to_s[0].upcase}")
+          publish_attribute("spa/settemperature", message.set_temperature)
+          publish_attribute("spa/settemperature/$unit", "º#{message.temperature_scale.to_s[0].upcase}")
+          if message.temperature_scale == :celsius
+            publish_attribute("spa/currenttemperature/$format", "0:42")
+            publish_attribute("spa/settemperature/$format", message.temperature_range == :high ? "26:40" : "10:26")
+            publish_hass_discovery_settemp(:celsius)
+          else
+            publish_attribute("spa/currenttemperature/$format", "32:108")
+            publish_attribute("spa/settemperature/$format", message.temperature_range == :high ? "80:106" : "50:99")
+            publish_hass_discovery_settemp(:fahrenheit)
+          end
+          publish_attribute("spa/filter1", message.filter[0])
+          publish_attribute("spa/filter2", message.filter[1])
+
+          publish_attribute("spa/circpump", message.circ_pump) if @bwa.last_control_configuration2&.circ_pump
+          publish_attribute("spa/blower", message.blower) if @bwa.last_control_configuration2&.blower.to_i != 0
+          publish_attribute("spa/mister", message.mister) if @bwa.last_control_configuration2&.mister
+          (0..5).each do |i|
+            if @bwa.last_control_configuration2&.pumps&.[](i).to_i != 0
+              publish_attribute("spa/pump#{i + 1}",
+                                message.pumps[i])
+            end
+          end
+          (0..1).each do |i|
+            if @bwa.last_control_configuration2&.lights&.[](i)
+              publish_attribute("spa/light#{i + 1}",
+                                message.lights[i])
+            end
+          end
+          (0..1).each do |i|
+            publish_attribute("spa/aux#{i + 1}", message.lights[i]) if @bwa.last_control_configuration2&.aux&.[](i)
+          end
+
+          # Tell systemd we are still alive and kicking. Ignored if systemd not in use.
+          SdNotify.watchdog
+
         end
       end
     end
@@ -153,26 +155,26 @@ class MQTTBridge
       case topic[@base_topic.length + 1..-1]
       when "spa/hold/set"
         next @bwa.toggle_hold if value == "toggle"
-        next unless %w{true false}.include?(value)
+        next unless %w[true false].include?(value)
 
         @bwa.set_hold(value == "true")
       when "spa/heatingmode/set"
         next @bwa.toggle_heating_mode if value == "toggle"
-        next unless %w{ready rest}.include?(value)
+        next unless %w[ready rest].include?(value)
 
         @bwa.set_heating_mode(value.to_sym)
       when "spa/temperaturescale/set"
-        next unless %w{fahrenheit celsius}.include?(value)
+        next unless %w[fahrenheit celsius].include?(value)
 
         @bwa.set_temperature_scale(value.to_sym)
       when "spa/24htime/set"
-        next unless %w{true false}.include?(value)
+        next unless %w[true false].include?(value)
 
         now = Time.now
         @bwa.set_time(now.hour, now.min, value == "true")
       when "spa/temperaturerange/set"
         next @bwa.toggle_temperature_range if value == "toggle"
-        next unless %w{low high}.include?(value)
+        next unless %w[low high].include?(value)
 
         @bwa.set_temperature_range(value.to_sym)
       when %r{^spa/pump([1-6])/set$}
@@ -181,12 +183,12 @@ class MQTTBridge
         @bwa.set_pump($1.to_i, value.to_i)
       when %r{^spa/(light|aux)([12])/set$}
         next @bwa.send(:"toggle_#{$1}", $2.to_i) if value == "toggle"
-        next unless %w{true false}.include?(value)
+        next unless %w[true false].include?(value)
 
         @bwa.send(:"set_#{$1}", $2.to_i, value == "true")
       when "spa/mister/set"
         next @bwa.toggle_mister if value == "toggle"
-        next unless %w{true false}.include?(value)
+        next unless %w[true false].include?(value)
 
         @bwa.set_mister(value == "true")
       when "spa/blower/set"
@@ -217,7 +219,7 @@ class MQTTBridge
     @mqtt.subscribe("#{@base_topic}/#{topic}")
   end
 
-  def publish_hass_discovery()
+  def publish_hass_discovery
     publish_hass_entity(type: "binary_sensor", name: "Priming", subtopic: "priming",
                         device_class: "running", icon: "mdi:fast-forward")
 
@@ -234,10 +236,10 @@ class MQTTBridge
                         device_class: "running", icon:  "mdi:hot-tub")
 
     publish_hass_entity(type: "select", name: "Heating Mode", subtopic: "heatingmode",
-                        options: ["ready", "rest", "ready_in_rest"], icon: "mdi:cog-play")
+                        options: %w[ready rest ready_in_rest], icon: "mdi:cog-play")
 
     publish_hass_entity(type: "select", name: "Temperature Range", subtopic: "temperaturerange",
-                        options: ["high", "low"], icon: "mdi:thermometer-lines")
+                        options: %w[high low], icon: "mdi:thermometer-lines")
 
     publish_hass_entity(type: "sensor", name: "Temperature Scale", subtopic: "temperaturescale")
 
@@ -275,7 +277,7 @@ class MQTTBridge
     end
   end
 
-  def publish_hass_discovery_pumps(i, speeds)
+  def publish_hass_discovery_pumps(i, _speeds)
     publish_hass_entity(type: "switch", name: "Pump #{i}", subtopic: "pump#{i}", payload_on: "toggle",
                         payload_off: "toggle", state_on: "2", state_off: "0", icon: "mdi:chart-bubble")
   end
@@ -554,7 +556,7 @@ if ARGV.empty?
   spas = BWA::Discovery.discover
   if spas.empty?
     BWA.logger.fatal "Could not find spa!"
-    $stderr.puts "Could not find spa!"
+    warn "Could not find spa!"
     exit 1
   end
   spa_ip = "tcp://#{spas.first.first}/"
