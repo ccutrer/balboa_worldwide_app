@@ -61,10 +61,10 @@ class MQTTBridge
       when BWA::Messages::FilterCycles
         2.times do |i|
           node = @homie["filter-cycle#{i + 1}"]
-          node["start-hour"].value = message.public_send(:"filter#{i + 1}_start_hour")
-          node["start-minute"].value = message.public_send(:"filter#{i + 1}_start_minute")
-          node["duration"].value = message.public_send(:"filter#{i + 1}_duration")
-          node["enabled"].value = message.filter2_enabled if i == 1
+          node["start-hour"].value = message.public_send(:"cycle#{i + 1}_start_hour")
+          node["start-minute"].value = message.public_send(:"cycle#{i + 1}_start_minute")
+          node["duration"].value = message.public_send(:"cycle#{i + 1}_duration")
+          node["enabled"].value = message.cycle2_enabled? if i == 1
         end
       when BWA::Messages::Status
         # make sure time is in sync

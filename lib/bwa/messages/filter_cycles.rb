@@ -5,6 +5,7 @@ module BWA
     class FilterCycles < Message
       attr_accessor :cycle1_start_hour, :cycle1_start_minute, :cycle1_duration,
                     :cycle2_enabled, :cycle2_start_hour, :cycle2_start_minute, :cycle2_duration
+      alias_method :cycle2_enabled?, :cycle2_enabled
 
       MESSAGE_TYPE = (+"\xbf\x23").force_encoding(Encoding::ASCII_8BIT)
       MESSAGE_LENGTH = 8
@@ -26,8 +27,8 @@ module BWA
       end
 
       def serialize
-        data = cycle1_start_hhour.chr
-        data += cycle1_start_hminute.chr
+        data = cycle1_start_hour.chr
+        data += cycle1_start_minute.chr
         data += (cycle1_duration / 60).chr
         data += (cycle1_duration % 60).chr
 
@@ -35,7 +36,7 @@ module BWA
         # The high order bit of the byte is a flag to indicate this so we have
         #  to do a bit of different processing to set that.
         # Get the filter 2 start hour
-        start_hour = cycle2_start_hhour
+        start_hour = cycle2_start_hour
 
         # Check to see if we want filter 2 enabled (either because it changed or from the current configuration)
         start_hour |= 0x80 if cycle2_enabled
