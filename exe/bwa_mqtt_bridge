@@ -265,7 +265,7 @@ class MQTTBridge
                      name,
                      :boolean,
                      @bwa.lights[i],
-                     hass: { light: { icon: "mdi-car-parking-lights" } },
+                     hass: { light: { icon: "mdi:car-parking-lights" } },
                      non_standard_value_check: allow_toggle) do |value|
           next @bwa.toggle_light(i) if value == "toggle"
 
