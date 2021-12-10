@@ -29,9 +29,9 @@ module BWA
 
       # Ignore (parse and throw away) messages of these types.
       IGNORED_MESSAGES = [
-        "\xbf\x00".force_encoding(Encoding::ASCII_8BIT), # request for new clients
-        "\xbf\xe1".force_encoding(Encoding::ASCII_8BIT),
-        "\xbf\x07".force_encoding(Encoding::ASCII_8BIT) # nothing to send
+        (+"\xbf\x00").force_encoding(Encoding::ASCII_8BIT), # request for new clients
+        (+"\xbf\xe1").force_encoding(Encoding::ASCII_8BIT),
+        (+"\xbf\x07").force_encoding(Encoding::ASCII_8BIT) # nothing to send
       ].freeze
 
       # Don't log messages of these types, even in DEBUG mode.
@@ -42,15 +42,15 @@ module BWA
           unless BWA.verbosity >= 1
             msgs += [
               Messages::Status::MESSAGE_TYPE,
-              "\xbf\xe1".force_encoding(Encoding::ASCII_8BIT)
+              (+"\xbf\xe1").force_encoding(Encoding::ASCII_8BIT)
             ]
           end
           unless BWA.verbosity >= 2
             msgs += [
-              "\xbf\x00".force_encoding(Encoding::ASCII_8BIT),
-              "\xbf\xe1".force_encoding(Encoding::ASCII_8BIT),
+              (+"\xbf\x00").force_encoding(Encoding::ASCII_8BIT),
+              (+"\xbf\xe1").force_encoding(Encoding::ASCII_8BIT),
               Messages::Ready::MESSAGE_TYPE,
-              "\xbf\x07".force_encoding(Encoding::ASCII_8BIT)
+              (+"\xbf\x07").force_encoding(Encoding::ASCII_8BIT)
             ]
           end
           msgs
@@ -138,8 +138,8 @@ module BWA
         end
       end
 
-      def format_duration(hours, minutes)
-        format("%d:%02d", hours, minutes)
+      def format_duration(minutes)
+        format("%d:%02d", minutes / 60, minutes % 60)
       end
     end
 
@@ -154,9 +154,10 @@ module BWA
 
     def serialize(message = "")
       length = message.length + 5
-      full_message = "#{length.chr}#{src.chr}#{self.class::MESSAGE_TYPE}#{message}".force_encoding(Encoding::ASCII_8BIT)
+      full_message = (+"#{length.chr}#{src.chr}#{self.class::MESSAGE_TYPE}#{message}")
+                     .force_encoding(Encoding::ASCII_8BIT)
       checksum = CRC.checksum(full_message)
-      "\x7e#{full_message}#{checksum.chr}\x7e".force_encoding(Encoding::ASCII_8BIT)
+      (+"\x7e#{full_message}#{checksum.chr}\x7e").force_encoding(Encoding::ASCII_8BIT)
     end
 
     def inspect
@@ -171,7 +172,7 @@ require "bwa/messages/control_configuration"
 require "bwa/messages/control_configuration_request"
 require "bwa/messages/filter_cycles"
 require "bwa/messages/ready"
-require "bwa/messages/set_temperature"
+require "bwa/messages/set_target_temperature"
 require "bwa/messages/set_temperature_scale"
 require "bwa/messages/set_time"
 require "bwa/messages/status"

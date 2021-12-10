@@ -3,7 +3,7 @@
 module BWA
   module Messages
     class ControlConfiguration < Message
-      MESSAGE_TYPE = "\xbf\x24".force_encoding(Encoding::ASCII_8BIT)
+      MESSAGE_TYPE = (+"\xbf\x24").force_encoding(Encoding::ASCII_8BIT)
       MESSAGE_LENGTH = 21
 
       attr_accessor :model, :version
@@ -25,17 +25,17 @@ module BWA
     end
 
     class ControlConfiguration2 < Message
-      MESSAGE_TYPE = "\xbf\x2e".force_encoding(Encoding::ASCII_8BIT)
+      MESSAGE_TYPE = (+"\xbf\x2e").force_encoding(Encoding::ASCII_8BIT)
       MESSAGE_LENGTH = 6
 
-      attr_accessor :pumps, :lights, :circ_pump, :blower, :mister, :aux
+      attr_accessor :pumps, :lights, :circulation_pump, :blower, :mister, :aux
 
       def initialize
         super
 
         self.pumps = Array.new(6, 0)
         self.lights = Array.new(2, false)
-        self.circ_pump = false
+        self.circulation_pump = false
         self.blower = 0
         self.mister = false
         self.aux = Array.new(2, false)
@@ -55,7 +55,7 @@ module BWA
         lights[1] = ((flags >> 6) & 0x03 != 0)
         flags = data[3].ord
         self.blower = flags & 0x03
-        self.circ_pump = ((flags >> 6) & 0x03 != 0)
+        self.circulation_pump = ((flags >> 6) & 0x03 != 0)
         flags = data[4].ord
         self.mister = (flags & 0x30 != 0)
         aux[0] = (flags & 0x01 != 0)
@@ -63,17 +63,16 @@ module BWA
       end
 
       def inspect
-        result = "#<BWA::Messages::ControlConfiguration2 "
         items = []
 
         items << "pumps=#{pumps.inspect}"
         items << "lights=#{lights.inspect}"
-        items << "circ_pump" if circ_pump
+        items << "circulation_pump" if circulation_pump
         items << "blower=#{blower}" if blower != 0
         items << "mister" if mister
         items << "aux=#{aux.inspect}"
 
-        result << items.join(" ") << ">"
+        "#<BWA::Messages::ControlConfiguration2 #{items.join(" ")}>"
       end
     end
   end

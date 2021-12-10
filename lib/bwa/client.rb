@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "forwardable"
 require "uri"
 
 require "bwa/logger"
@@ -7,7 +8,30 @@ require "bwa/message"
 
 module BWA
   class Client
-    attr_reader :last_status, :last_control_configuration, :last_control_configuration2, :last_filter_configuration
+    extend Forwardable
+
+    attr_reader :status, :control_configuration, :configuration, :filter_cycles
+
+    delegate model: :control_configuration
+    delegate %i[hold
+                hold?
+                priming
+                priming?
+                heating_mode
+                temperature_scale
+                twenty_four_hour_time
+                twenty_four_hour_time?
+                heating
+                heating?
+                temperature_range
+                current_temperature
+                target_temperature
+                circulation_pump
+                blower
+                mister
+                pumps
+                lights
+                aux] => :status
 
     def initialize(uri)
       uri = URI.parse(uri)
@@ -25,7 +49,11 @@ module BWA
         @queue = []
       end
       @src = 0x0a
-      @buffer = ""
+      @buffer = +""
+    end
+
+    def full_configuration?
+      status && control_configuration && configuration && filter_cycles
     end
 
     def poll
@@ -53,10 +81,10 @@ module BWA
         end
         @io.write(msg)
       end
-      @last_status = message.dup if message.is_a?(Messages::Status)
-      @last_filter_configuration = message.dup if message.is_a?(Messages::FilterCycles)
-      @last_control_configuration = message.dup if message.is_a?(Messages::ControlConfiguration)
-      @last_control_configuration2 = message.dup if message.is_a?(Messages::ControlConfiguration2)
+      @status = message.dup if message.is_a?(Messages::Status)
+      @filter_cycles = message.dup if message.is_a?(Messages::FilterCycles)
+      @control_configuration = message.dup if message.is_a?(Messages::ControlConfiguration)
+      @configuration = message.dup if message.is_a?(Messages::ControlConfiguration2)
       message
     end
 
@@ -112,6 +140,10 @@ module BWA
       toggle_item(index + 0x10)
     end
 
+    def toggle_aux(index)
+      toggle_item(index + 0x15)
+    end
+
     def toggle_mister
       toggle_item(:mister)
     end
@@ -125,9 +157,11 @@ module BWA
     end
 
     def set_pump(index, desired)
-      return unless last_status && last_control_configuration2
+      return unless status && configuration
 
-      times = (desired - last_status.pumps[index - 1]) % (last_control_configuration2.pumps[index - 1] + 1)
+      desired = 0 if desired == false
+      desired = 1 if desired == true
+      times = (desired - status.pumps[index - 1]) % (configuration.pumps[index - 1] + 1)
       times.times do
         toggle_pump(index)
         sleep(0.1)
@@ -137,24 +171,25 @@ module BWA
     %w[light aux].each do |type|
       class_eval <<-RUBY, __FILE__, __LINE__ + 1
         def set_#{type}(index, desired)
-          return unless last_status
-          return if last_status.#{type}s[index - 1] == desired
+          return unless status
+          return if status.#{type}s[index - 1] == desired
+
           toggle_#{type}(index)
         end
       RUBY
     end
 
     def mister=(desired)
-      return unless last_status
-      return if last_status.mister == desired
+      return unless status
+      return if status.mister == desired
 
       toggle_mister
     end
 
     def blower=(desired)
-      return unless last_status && last_control_configuration2
+      return unless status && configuration
 
-      times = (desired - last_status.blower) % (last_control_configuration2.blower + 1)
+      times = (desired - status.blower) % (configuration.blower + 1)
       times.times do
         toggle_blower
         sleep(0.1)
@@ -162,19 +197,19 @@ module BWA
     end
 
     def hold=(desired)
-      return unless last_status
-      return if last_status.hold == desired
+      return unless status
+      return if status.hold == desired
 
       toggle_hold
     end
 
     # high range is 80-106 for F, 26-40 for C (by 0.5)
     # low range is 50-99 for F, 10-26 for C (by 0.5)
-    def set_temperature=(desired) # rubocop:disable Naming/AccessorMethodName
-      return unless last_status
-      return if last_status.set_temperature == desired
+    def target_temperature=(desired)
+      return unless status
+      return if status.target_temperature == desired
 
-      desired *= 2 if (last_status && last_status.temperature_scale == :celsius) || desired < 50
+      desired *= 2 if (status && status.temperature_scale == :celsius) || desired < 50
       send_message(Messages::SetTemperature.new(desired.round))
     end
 
@@ -188,16 +223,10 @@ module BWA
       send_message(Messages::SetTemperatureScale.new(scale))
     end
 
-    def set_filtercycles(changed_item, changed_value)
-      # changed_item - String name of item that was changed
-      # changed_value - String value of the item that changed
-      return unless last_filter_configuration
-
-      send_message(Messages::FilterCycles.new(changed_item, changed_value, @last_filter_configuration))
+    def update_filter_cycles(new_filter_cycles)
+      send_message(new_filter_cycles)
+      @filter_cycles = new_filter_cycles.dup
       request_filter_configuration
-      # Need to wait briefly to let the next message come in from the spa in order to update last_filter_configuration
-      # needed when automation quickly sets multiple values one right after the other
-      sleep(0.2)
     end
 
     def toggle_temperature_range
@@ -205,8 +234,8 @@ module BWA
     end
 
     def temperature_range=(desired)
-      return unless last_status
-      return if last_status.temperature_range == desired
+      return unless status
+      return if status.temperature_range == desired
 
       toggle_temperature_range
     end
@@ -218,13 +247,13 @@ module BWA
     HEATING_MODES = %I[ready rest ready_in_rest].freeze
     def heating_mode=(desired)
       raise ArgumentError, "heating_mode must be :ready or :rest" unless %I[ready rest].include?(desired)
-      return unless last_status
+      return unless status
 
-      times = if (last_status.heating_mode == :ready && desired == :rest) ||
-                 (last_status.heating_mode == :rest && desired == :ready) ||
-                 (last_status.heating_mode == :ready_in_rest && desired == :rest)
+      times = if (status.heating_mode == :ready && desired == :rest) ||
+                 (status.heating_mode == :rest && desired == :ready) ||
+                 (status.heating_mode == :ready_in_rest && desired == :rest)
                 1
-              elsif last_status.heating_mode == :ready_in_rest && desired == :ready
+              elsif status.heating_mode == :ready_in_rest && desired == :ready
                 2
               else
                 0

@@ -3,7 +3,7 @@
 module BWA
   module Messages
     class SetTemperatureScale < Message
-      MESSAGE_TYPE = "\xbf\x27".force_encoding(Encoding::ASCII_8BIT)
+      MESSAGE_TYPE = (+"\xbf\x27").force_encoding(Encoding::ASCII_8BIT)
       MESSAGE_LENGTH = 2
 
       attr_accessor :scale
@@ -24,7 +24,7 @@ module BWA
       end
 
       def inspect
-        "#<BWA::Messages::SetTemperatureScale º#{scale.to_s[0].upcase}>"
+        "#<BWA::Messages::SetTemperatureScale °#{scale.to_s[0].upcase}>"
       end
     end
   end

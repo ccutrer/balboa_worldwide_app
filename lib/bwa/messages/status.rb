@@ -7,21 +7,25 @@ module BWA
                     :priming,
                     :heating_mode,
                     :twenty_four_hour_time,
-                    :filter,
+                    :filter_cycles,
                     :heating,
                     :temperature_range,
                     :hour, :minute,
-                    :circ_pump,
+                    :circulation_pump,
                     :blower,
                     :pumps,
                     :lights,
                     :mister,
                     :aux,
                     :current_temperature,
-                    :set_temperature
+                    :target_temperature
       attr_reader :temperature_scale
+      alias_method :hold?, :hold
+      alias_method :priming?, :priming
+      alias_method :twenty_four_hour_time?, :twenty_four_hour_time
+      alias_method :heating?, :heating
 
-      MESSAGE_TYPE = "\xaf\x13".force_encoding(Encoding::ASCII_8BIT)
+      MESSAGE_TYPE = (+"\xaf\x13").force_encoding(Encoding::ASCII_8BIT)
       # additional features have been added in later versions
       MESSAGE_LENGTH = (24..32).freeze
 
@@ -34,16 +38,16 @@ module BWA
         self.heating_mode = :ready
         @temperature_scale = :fahrenheit
         self.twenty_four_hour_time = false
-        self.filter = Array.new(2, false)
+        self.filter_cycles = Array.new(2, false)
         self.heating = false
         self.temperature_range = :high
         self.hour = self.minute = 0
-        self.circ_pump = false
+        self.circulation_pump = false
         self.pumps = Array.new(6, 0)
         self.lights = Array.new(2, false)
         self.mister = false
         self.aux = Array.new(2, false)
-        self.set_temperature = 100
+        self.target_temperature = 100
       end
 
       def parse(data)
@@ -61,8 +65,8 @@ module BWA
         flags = data[9].ord
         self.temperature_scale = (flags & 0x01 == 0x01) ? :celsius : :fahrenheit
         self.twenty_four_hour_time = (flags & 0x02 == 0x02)
-        filter[0] = (flags & 0x04 != 0)
-        filter[1] = (flags & 0x08 != 0)
+        filter_cycles[0] = (flags & 0x04 != 0)
+        filter_cycles[1] = (flags & 0x08 != 0)
         flags = data[10].ord
         self.heating = (flags & 0x30 != 0)
         self.temperature_range = (flags & 0x04 == 0x04) ? :high : :low
@@ -76,7 +80,7 @@ module BWA
         pumps[5] = (flags >> 2) & 0x03
 
         flags = data[13].ord
-        self.circ_pump = (flags & 0x02 == 0x02)
+        self.circulation_pump = (flags & 0x02 == 0x02)
         self.blower = (flags & 0x0C == 0x0C)
         flags = data[14].ord
         lights[0] = (flags & 0x03 != 0)
@@ -89,12 +93,12 @@ module BWA
         self.minute = data[4].ord
         self.current_temperature = data[2].ord
         self.current_temperature = nil if current_temperature == 0xff
-        self.set_temperature = data[20].ord
+        self.target_temperature = data[20].ord
 
         return unless temperature_scale == :celsius
 
         self.current_temperature /= 2.0 if current_temperature
-        self.set_temperature /= 2.0 if set_temperature
+        self.target_temperature /= 2.0 if target_temperature
       end
 
       def serialize
@@ -117,7 +121,7 @@ module BWA
         flags |= pump2 * 4
         data[11] = flags.chr
         flags = 0
-        flags |= 0x02 if circ_pump
+        flags |= 0x02 if circulation_pump
         data[13] = flags.chr
         flags = 0
         flags |= 0x03 if light1
@@ -126,10 +130,10 @@ module BWA
         data[4] = minute.chr
         if temperature_scale == :celsius
           data[2] = (current_temperature ? (current_temperature * 2).to_i : 0xff).chr
-          data[20] = (set_temperature * 2).to_i.chr
+          data[20] = (target_temperature * 2).to_i.chr
         else
           data[2] = (current_temperature.to_i || 0xff).chr
-          data[20] = set_temperature.to_i.chr
+          data[20] = target_temperature.to_i.chr
         end
 
         super(data)
@@ -143,43 +147,42 @@ module BWA
               self.current_temperature += 32
               self.current_temperature = current_temperature.round
             end
-            self.set_temperature *= 9.0 / 5
-            self.set_temperature += 32
-            self.set_temperature = set_temperature.round
+            self.target_temperature *= 9.0 / 5
+            self.target_temperature += 32
+            self.target_temperature = target_temperature.round
           else
             if current_temperature
               self.current_temperature -= 32
               self.current_temperature *= 5.0 / 90
               self.current_temperature = (current_temperature * 2).round / 2.0
             end
-            self.set_temperature -= 32
-            self.set_temperature *= 5.0 / 9
-            self.set_temperature = (set_temperature * 2).round / 2.0
+            self.target_temperature -= 32
+            self.target_temperature *= 5.0 / 9
+            self.target_temperature = (target_temperature * 2).round / 2.0
           end
         end
         @temperature_scale = value
       end
 
       def inspect
-        result = "#<BWA::Messages::Status "
         items = []
 
         items << "hold" if hold
         items << "priming" if priming
         items << self.class.format_time(hour, minute, twenty_four_hour_time: twenty_four_hour_time)
-        items << "#{current_temperature || "--"}/#{set_temperature}º#{temperature_scale.to_s[0].upcase}"
-        items << "filter=#{filter.inspect}"
+        items << "#{current_temperature || "--"}/#{target_temperature}°#{temperature_scale.to_s[0].upcase}"
+        items << "filter_cycles=#{filter_cycles.inspect}"
         items << heating_mode
         items << "heating" if heating
         items << temperature_range
-        items << "circ_pump" if circ_pump
+        items << "circulation_pump" if circulation_pump
         items << "blower" if blower
         items << "pumps=#{pumps.inspect}"
         items << "lights=#{lights.inspect}"
         items << "aux=#{aux.inspect}"
         items << "mister" if mister
 
-        result << items.join(" ") << ">"
+        "#<BWA::Messages::Status #{items.join(" ")}>"
       end
     end
   end
