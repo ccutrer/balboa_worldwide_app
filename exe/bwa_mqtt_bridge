@@ -100,7 +100,14 @@ class MQTTBridge
         end
 
         @homie["spa"]["circulation-pump"].value = @bwa.circulation_pump if @bwa.configuration.circulation_pump
-        @homie["spa"]["blower"].value = @bwa.blower unless @bwa.configuration.blower.zero?
+        case @bwa.configuration.blower
+        when 0
+          # not present
+        when 1
+          @homie["spa"]["blower"].value = !@bwa.blower.zero?
+        else
+          @homie["spa"]["blower"].value = @bwa.blower
+        end
         @homie["spa"]["mister"].value = @bwa.mister if @bwa.configuration.mister
 
         @bwa.configuration.pumps.each_with_index do |speeds, i|
@@ -195,13 +202,22 @@ class MQTTBridge
       update_temperature_scale
 
       unless @bwa.configuration.blower.zero?
+        if @bwa.configuration.blower == 1
+          args = [:boolean, !@bwa.blower.zero?]
+          kwargs = { hass: { switch: { icon: "mdi:chart-bubble" } } }
+        else
+          args = [:integer, @bwa.blower]
+          kwargs = {
+            format: 0..@bwa.configuration.blower,
+            hass: { number: { icon: "mdi:chart-bubble" } }
+          }
+        end
+
         spa.property("blower",
                      "Blower",
-                     :integer,
-                     @bwa.blower,
-                     format: 0..@bwa.configuration.blower,
-                     hass: { number: { icon: "mdi-chart-bubble" } },
-                     non_standard_value_check: allow_toggle) do |value|
+                     *args,
+                     non_standard_value_check: allow_toggle,
+                     **kwargs) do |value|
           next @bwa.toggle_blower if value == "toggle"
 
           @bwa.blower = value
@@ -234,20 +250,17 @@ class MQTTBridge
         next if speeds.zero?
 
         if speeds == 1
-          type = :boolean
-          current_value = @bwa.pumps[i] != 0
+          args = [:boolean, !@bwa.pumps[i].zero?]
           kwargs = { hass: { switch: { icon: "mdi:chart-bubble" } } }
         else
-          type = :integer
-          current_value = @bwa.pumps[i]
+          args = [:integer, @bwa.pumps[i]]
           kwargs = { format: 0..speeds,
                      hass: { number: { icon: "mdi:chart-bubble" } } }
         end
         name = single_pump ? "Pump" : "Pump #{i + 1}"
         spa.property("pump#{i + 1}",
                      name,
-                     type,
-                     current_value,
+                     *args,
                      non_standard_value_check: allow_toggle,
                      **kwargs) do |value|
           next @bwa.toggle_pump(i) if value == "toggle"
