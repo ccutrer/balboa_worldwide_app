@@ -44,7 +44,7 @@ module BWA
               send_configuration(socket)
             when Messages::ControlConfigurationRequest
               message.type == 1 ? send_control_configuration(socket) : send_control_configuration2(socket)
-            when Messages::SetTemperature
+            when Messages::SetTargetTemperature
               temperature = message.temperature
               temperature /= 2.0 if @status.temperature_scale == :celsius
               @status.target_temperature = temperature

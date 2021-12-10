@@ -133,15 +133,15 @@ module BWA
     end
 
     def toggle_pump(index)
-      toggle_item(index + 3)
+      toggle_item(index + 0x04)
     end
 
     def toggle_light(index)
-      toggle_item(index + 0x10)
+      toggle_item(index + 0x11)
     end
 
     def toggle_aux(index)
-      toggle_item(index + 0x15)
+      toggle_item(index + 0x16)
     end
 
     def toggle_mister
@@ -161,18 +161,19 @@ module BWA
 
       desired = 0 if desired == false
       desired = 1 if desired == true
-      times = (desired - status.pumps[index - 1]) % (configuration.pumps[index - 1] + 1)
+      times = (desired - status.pumps[index]) % (configuration.pumps[index] + 1)
       times.times do
         toggle_pump(index)
         sleep(0.1)
       end
     end
 
-    %w[light aux].each do |type|
+    %i[light aux].each do |type|
+      suffix = "s" if type == :light
       class_eval <<-RUBY, __FILE__, __LINE__ + 1
         def set_#{type}(index, desired)
           return unless status
-          return if status.#{type}s[index - 1] == desired
+          return if status.#{type}#{suffix}[index] == desired
 
           toggle_#{type}(index)
         end
@@ -210,7 +211,7 @@ module BWA
       return if status.target_temperature == desired
 
       desired *= 2 if (status && status.temperature_scale == :celsius) || desired < 50
-      send_message(Messages::SetTemperature.new(desired.round))
+      send_message(Messages::SetTargetTemperature.new(desired.round))
     end
 
     def set_time(hour, minute, twenty_four_hour_time: false)

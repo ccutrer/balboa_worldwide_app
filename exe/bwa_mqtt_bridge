@@ -23,6 +23,8 @@ class MQTTBridge
   private_constant :SIMPLE_PROPERTIES
 
   def initialize(mqtt_uri, bwa, device_id: "bwa", root_topic: "homie")
+    Thread.abort_on_exception = true
+
     @homie = MQTT::Homie::Device.new(device_id, "BWA Link", mqtt: mqtt_uri, root_topic: root_topic)
     @bwa = bwa
 
@@ -250,7 +252,7 @@ class MQTTBridge
                      **kwargs) do |value|
           next @bwa.toggle_pump(i) if value == "toggle"
 
-          set_pump(i, value)
+          @bwa.set_pump(i, value)
         end
       end
 
@@ -265,10 +267,9 @@ class MQTTBridge
                      @bwa.lights[i],
                      hass: { light: { icon: "mdi-car-parking-lights" } },
                      non_standard_value_check: allow_toggle) do |value|
-          puts "changing light #{value.inspect}"
           next @bwa.toggle_light(i) if value == "toggle"
 
-          set_light(i, value)
+          @bwa.set_light(i, value)
         end
       end
 
@@ -283,7 +284,7 @@ class MQTTBridge
                      non_standard_value_check: allow_toggle) do |value|
           next @bwa.toggle_aux(i) if value == "toggle"
 
-          set_aux(i, value)
+          @bwa.set_aux(i, value)
         end
       end
     end
