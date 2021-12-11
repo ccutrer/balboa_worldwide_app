@@ -81,7 +81,7 @@ module BWA
 
         flags = data[13].ord
         self.circulation_pump = (flags & 0x02 == 0x02)
-        self.blower = (flags & 0x0C == 0x0C)
+        self.blower = (flags >> 2) & 0x03
         flags = data[14].ord
         lights[0] = (flags & 0x03 != 0)
         lights[1] = ((flags >> 2) & 0x03 != 0)
@@ -176,7 +176,7 @@ module BWA
         items << "heating" if heating
         items << temperature_range
         items << "circulation_pump" if circulation_pump
-        items << "blower" if blower
+        items << "blower=#{blower}"
         items << "pumps=#{pumps.inspect}"
         items << "lights=#{lights.inspect}"
         items << "aux=#{aux.inspect}"
