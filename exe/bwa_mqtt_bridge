@@ -137,6 +137,11 @@ class MQTTBridge
     allow_toggle = lambda do |value|
       next value if value == "toggle"
     end
+    allow_toggle_or_speed = lambda do |value|
+      next value if value == "toggle"
+
+      value.to_i if value.match?(/^\d+$/)
+    end
 
     @homie.node("spa", "Hot Tub", @bwa.model) do |spa|
       spa.property("hold",
@@ -216,7 +221,7 @@ class MQTTBridge
         spa.property("blower",
                      "Blower",
                      *args,
-                     non_standard_value_check: allow_toggle,
+                     non_standard_value_check: allow_toggle_or_speed,
                      **kwargs) do |value|
           next @bwa.toggle_blower if value == "toggle"
 
@@ -261,7 +266,7 @@ class MQTTBridge
         spa.property("pump#{i + 1}",
                      name,
                      *args,
-                     non_standard_value_check: allow_toggle,
+                     non_standard_value_check: allow_toggle_or_speed,
                      **kwargs) do |value|
           next @bwa.toggle_pump(i) if value == "toggle"
 
