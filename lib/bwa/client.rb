@@ -190,6 +190,8 @@ module BWA
     def blower=(desired)
       return unless status && configuration
 
+      desired = 0 if desired == false
+      desired = 1 if desired == true
       times = (desired - status.blower) % (configuration.blower + 1)
       times.times do
         toggle_blower
