@@ -160,7 +160,8 @@ module BWA
       return unless status && configuration
 
       desired = 0 if desired == false
-      desired = 1 if desired == true
+      desired = configuration.pumps[index] if desired == true
+      desired = [desired, configuration.pumps[index]].min
       times = (desired - status.pumps[index]) % (configuration.pumps[index] + 1)
       times.times do
         toggle_pump(index)
@@ -191,7 +192,8 @@ module BWA
       return unless status && configuration
 
       desired = 0 if desired == false
-      desired = 1 if desired == true
+      desired = configuration.blower if desired == true
+      desired = [desired, configuration.blower].min
       times = (desired - status.blower) % (configuration.blower + 1)
       times.times do
         toggle_blower
