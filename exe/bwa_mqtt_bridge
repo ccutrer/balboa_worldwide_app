@@ -139,6 +139,8 @@ class MQTTBridge
     end
     allow_toggle_or_speed = lambda do |value|
       next value if value == "toggle"
+      next true if value == "true"
+      next false if value == "false"
 
       value.to_i if value.match?(/^\d+$/)
     end
