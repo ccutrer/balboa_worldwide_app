@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    balboa_worldwide_app (2.0.5)
+    balboa_worldwide_app (2.0.6)
       ccutrer-serialport (~> 1.0.0)
       digest-crc (~> 0.4)
       mqtt-homeassistant (~> 0.1, >= 0.1.3)

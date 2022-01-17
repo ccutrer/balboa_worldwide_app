@@ -64,9 +64,15 @@ module BWA
         @buffer = @buffer[bytes_read..-1] if bytes_read
         method = @io.respond_to?(:readpartial) ? :readpartial : :read
         unless message
+          # one EOF is just serial ports saying they have no data;
+          # several EOFs in a row is the file is dead and gone
+          eofs = 0
           begin
             @buffer.concat(@io.__send__(method, 64 * 1024))
           rescue EOFError
+            eofs += 1
+            raise if eofs == 5
+
             @io.wait_readable
             retry
           end
