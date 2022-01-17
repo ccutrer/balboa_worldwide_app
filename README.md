@@ -103,7 +103,24 @@ This gem will publish all of the BWA sensors and controls to Home Assistant and 
 
 ## Using RS-485 for a direct connection
 
-This gem supports using an RS-485 direct connection to the hot tub if you don't have the Wifi module, or would simply like something more reliable. It is possible to directly connect to the GPIO on a Raspberry Pi, or to use a USB RS-485 dongle such as [this one from Amazon](https://www.amazon.com/gp/product/B07B416CPK). The key is identifying the correct wires as RS-485+ and RS-485-. There should be a small connector coming out of your control box. It's compatible with an [ATX micro-fit connector](https://www.amazon.com/gp/product/B07Z7X5KW1). You can also purchase a Y-cable such as [this one](https://spacare.com/BalboaWaterGroupWi-FiY-CableSplitter25657.aspx) if you already have something connected to the port, and want to keep it connected (or spy on its communication). Note that the colors may not be the same on any adapter or pigtail you find. Here's a photo of mine connected to the dongle:
+This gem supports using an RS-485 direct connection to the hot tub if you don't
+have the Wifi module, or would simply like something more reliable. It is
+possible to connect to the GPIOs on a Raspberry Pi using a something like a
+MAX485 transceiver, or to use a USB RS-485 dongle such as
+[this one from Amazon](https://www.amazon.com/gp/product/B07B416CPK). Setting
+up a serial device in Linux with GPIOs is beyond the scope of this
+documentation.
+
+The key to proper communication is identifying the correct wires as RS-485+ and
+RS-485-. There should be a small connector coming out of your control box. It's
+compatible with an
+[ATX micro-fit connector](https://www.amazon.com/gp/product/B07Z7X5KW1). You
+can also purchase a Y-cable such as
+[this one](https://spacare.com/BalboaWaterGroupWi-FiY-CableSplitter25657.aspx)
+if you already have something connected to the port, and want to keep it
+connected (or spy on its communication). Note that the colors may not be the
+same on any adapter or pigtail you find. Here's a photo of mine connected to the
+dongle:
 
 ![RS-485 Dongle](doc/rs485dongle.jpg)
 
