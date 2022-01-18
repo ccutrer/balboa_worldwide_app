@@ -166,9 +166,11 @@ module BWA
       return unless status && configuration
 
       desired = 0 if desired == false
-      desired = configuration.pumps[index] if desired == true
-      desired = [desired, configuration.pumps[index]].min
-      times = (desired - status.pumps[index]) % (configuration.pumps[index] + 1)
+      max_pump_speed = configuration.pumps[index]
+      desired = max_pump_speed if desired == true
+      desired = [desired, max_pump_speed].min
+      current_pump_speed = [status.pumps[index], max_pump_speed].min
+      times = (desired - current_pump_speed) % (max_pump_speed + 1)
       times.times do
         toggle_pump(index)
         sleep(0.1)
