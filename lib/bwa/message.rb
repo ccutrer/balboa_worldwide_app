@@ -27,36 +27,6 @@ module BWA
         @messages << klass
       end
 
-      # Ignore (parse and throw away) messages of these types.
-      IGNORED_MESSAGES = [
-        "\xbf\x00".b, # request for new clients
-        "\xbf\xe1".b,
-        "\xbf\x07".b # nothing to send
-      ].freeze
-
-      # Don't log messages of these types, even in DEBUG mode.
-      # They are very frequent and would swamp the logs.
-      def common_messages
-        @common_messages ||= begin
-          msgs = []
-          unless BWA.verbosity >= 1
-            msgs += [
-              Messages::Status::MESSAGE_TYPE,
-              "\xbf\xe1".b
-            ]
-          end
-          unless BWA.verbosity >= 2
-            msgs += [
-              "\xbf\x00".b,
-              "\xbf\xe1".b,
-              Messages::Ready::MESSAGE_TYPE,
-              "\xbf\x07".b
-            ]
-          end
-          msgs
-        end
-      end
-
       def parse(data)
         offset = -1
         message_type = length = nil
@@ -92,16 +62,9 @@ module BWA
 
         message_type = data.slice(offset + 3, 2)
         BWA.logger.debug "discarding invalid data prior to message #{BWA.raw2str(data[0...offset])}" unless offset.zero?
-        unless common_messages.include?(message_type)
-          BWA.logger.debug " read: #{BWA.raw2str(data.slice(offset,
-                                                            length + 2))}"
-        end
 
         src = data[offset + 2].ord
         klass = @messages.find { |k| k::MESSAGE_TYPE == message_type }
-
-        # Ignore these message types
-        return [nil, offset + length + 2] if IGNORED_MESSAGES.include?(message_type)
 
         if klass
           valid_length = if klass::MESSAGE_LENGTH.respond_to?(:include?)
@@ -110,6 +73,8 @@ module BWA
                            length - 5 == klass::MESSAGE_LENGTH
                          end
           unless valid_length
+            BWA.logger.debug " read: #{BWA.raw2str(data.slice(offset, length + 2))}"
+
             raise InvalidMessage.new("Unrecognized data length (#{length}) for message #{klass}",
                                      data)
           end
@@ -124,7 +89,10 @@ module BWA
         message.parse(data.slice(offset + 5, length - 5))
         message.instance_variable_set(:@raw_data, data.slice(offset, length + 2))
         message.instance_variable_set(:@src, src)
-        BWA.logger.debug "from spa: #{message.inspect}" unless common_messages.include?(message_type)
+        if message.log?
+          BWA.logger.debug " read: #{BWA.raw2str(data.slice(offset, length + 2))}"
+          BWA.logger.info "from spa: #{message.inspect}"
+        end
         [message, offset + length + 2]
       end
 
@@ -150,6 +118,10 @@ module BWA
       @src = 0x0a
     end
 
+    def log?
+      true
+    end
+
     def parse(_data); end
 
     def serialize(message = "")
@@ -169,7 +141,10 @@ require "bwa/messages/configuration"
 require "bwa/messages/configuration_request"
 require "bwa/messages/control_configuration"
 require "bwa/messages/control_configuration_request"
+require "bwa/messages/error"
 require "bwa/messages/filter_cycles"
+require "bwa/messages/new_client_clear_to_send"
+require "bwa/messages/nothing_to_send"
 require "bwa/messages/ready"
 require "bwa/messages/set_target_temperature"
 require "bwa/messages/set_temperature_scale"

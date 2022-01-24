@@ -2,8 +2,8 @@
 
 module BWA
   module Messages
-    class Ready < Message
-      MESSAGE_TYPE = "\xbf\06".b
+    class NewClientClearToSend < Message
+      MESSAGE_TYPE = "\xbf\0".b
       MESSAGE_LENGTH = 0
 
       def log?
@@ -11,7 +11,7 @@ module BWA
       end
 
       def inspect
-        "#<BWA::Messages::Ready>"
+        "#<BWA::Messages::NewClientClearToSend>"
       end
     end
   end

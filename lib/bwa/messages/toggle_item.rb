@@ -32,13 +32,22 @@ module BWA
         self.item = item
       end
 
+      def log?
+        return true if BWA.verbosity >= 2
+        # dunno why we receive this, but somebody is spamming the bus
+        # trying to toggle an item we don't know
+        return false if item == 0 # rubocop:disable Style/NumericPredicate could be a symbol
+
+        true
+      end
+
       def parse(data)
         self.item = ITEMS.invert[data[0].ord] || data[0].ord
       end
 
       def serialize
         data = +"\x00\x00"
-        data[0] = if item.is_a? Integer
+        data[0] = if item.is_a?(Integer)
                     item.chr
                   else
                     ITEMS[item].chr

@@ -2,8 +2,8 @@
 
 module BWA
   module Messages
-    class Ready < Message
-      MESSAGE_TYPE = "\xbf\06".b
+    class NothingToSend < Message
+      MESSAGE_TYPE = "\xbf\x07".b
       MESSAGE_LENGTH = 0
 
       def log?
@@ -11,7 +11,7 @@ module BWA
       end
 
       def inspect
-        "#<BWA::Messages::Ready>"
+        "#<BWA::Messages::NothingToSend>"
       end
     end
   end

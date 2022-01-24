@@ -50,6 +50,10 @@ module BWA
         self.target_temperature = 100
       end
 
+      def log?
+        BWA.verbosity >= 1
+      end
+
       def parse(data)
         flags = data[0].ord
         self.hold = (flags & 0x05 != 0)
