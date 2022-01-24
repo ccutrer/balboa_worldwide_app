@@ -3,7 +3,7 @@
 module BWA
   module Messages
     class ToggleItem < Message
-      MESSAGE_TYPE = (+"\xbf\x11").force_encoding(Encoding::ASCII_8BIT)
+      MESSAGE_TYPE = "\xbf\x11".b
       MESSAGE_LENGTH = 2
       ITEMS = {
         normal_operation: 0x01,

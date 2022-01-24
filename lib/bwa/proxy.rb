@@ -25,7 +25,7 @@ module BWA
     end
 
     def shuffle_messages(socket1, socket2, tag)
-      leftover_data = (+"").force_encoding(Encoding::ASCII_8BIT)
+      leftover_data = "".b
       loop do
         if leftover_data.length < 2 || leftover_data.length < leftover_data[1].ord + 2
           begin

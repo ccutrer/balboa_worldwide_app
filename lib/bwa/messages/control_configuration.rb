@@ -3,7 +3,7 @@
 module BWA
   module Messages
     class ControlConfiguration < Message
-      MESSAGE_TYPE = (+"\xbf\x24").force_encoding(Encoding::ASCII_8BIT)
+      MESSAGE_TYPE = "\xbf\x24".b
       MESSAGE_LENGTH = 21
 
       attr_accessor :model, :version
@@ -25,7 +25,7 @@ module BWA
     end
 
     class ControlConfiguration2 < Message
-      MESSAGE_TYPE = (+"\xbf\x2e").force_encoding(Encoding::ASCII_8BIT)
+      MESSAGE_TYPE = "\xbf\x2e".b
       MESSAGE_LENGTH = 6
 
       attr_accessor :pumps, :lights, :circulation_pump, :blower, :mister, :aux

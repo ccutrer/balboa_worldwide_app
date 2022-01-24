@@ -20,9 +20,9 @@ module BWA
 
     def send_message(socket, message)
       length = message.length + 2
-      full_message = (+"#{length.chr}#{message}").force_encoding(Encoding::ASCII_8BIT)
+      full_message = "#{length.chr}#{message}"
       checksum = CRC.checksum(full_message)
-      socket.send((+"\x7e#{full_message}#{checksum.chr}\x7e").force_encoding(Encoding::ASCII_8BIT), 0)
+      socket.send("\x7e#{full_message}#{checksum.chr}\x7e".b, 0)
     end
 
     def run_client(socket)

@@ -25,7 +25,7 @@ module BWA
       alias_method :twenty_four_hour_time?, :twenty_four_hour_time
       alias_method :heating?, :heating
 
-      MESSAGE_TYPE = (+"\xaf\x13").force_encoding(Encoding::ASCII_8BIT)
+      MESSAGE_TYPE = "\xaf\x13".b
       # additional features have been added in later versions
       MESSAGE_LENGTH = (24..32).freeze
 

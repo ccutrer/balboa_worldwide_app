@@ -7,7 +7,7 @@ module BWA
                     :cycle2_enabled, :cycle2_start_hour, :cycle2_start_minute, :cycle2_duration
       alias_method :cycle2_enabled?, :cycle2_enabled
 
-      MESSAGE_TYPE = (+"\xbf\x23").force_encoding(Encoding::ASCII_8BIT)
+      MESSAGE_TYPE = "\xbf\x23".b
       MESSAGE_LENGTH = 8
 
       def parse(data)

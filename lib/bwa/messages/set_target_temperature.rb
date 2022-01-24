@@ -3,7 +3,7 @@
 module BWA
   module Messages
     class SetTargetTemperature < Message
-      MESSAGE_TYPE = (+"\xbf\x20").force_encoding(Encoding::ASCII_8BIT)
+      MESSAGE_TYPE = "\xbf\x20".b
       MESSAGE_LENGTH = 1
 
       attr_accessor :temperature
