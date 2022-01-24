@@ -95,6 +95,7 @@ class MQTTBridge
           property = @homie["spa"][prop.to_s.tr("_", "-")]
           property.value = @bwa.public_send(prop)
         end
+        @homie["spa"]["notification"].value = @bwa.notification || "none"
         2.times do |i|
           @homie["filter-cycle#{i + 1}"]["running"].value = @bwa.status.filter_cycles[i]
         end
@@ -144,8 +145,22 @@ class MQTTBridge
 
       value.to_i if value.match?(/^\d+$/)
     end
+    allowed_items = BWA::Messages::ToggleItem::ITEMS.keys.map(&:to_s)
+    allow_toggles = lambda do |value|
+      next unless allowed_items.include?(value)
+
+      value
+    end
 
     @homie.node("spa", "Hot Tub", @bwa.model) do |spa|
+      spa.property("command",
+                   "Send a command to the tub",
+                   :enum,
+                   format: %w[normal_operation clear_notification],
+                   retained: false,
+                   non_standard_value_check: allow_toggles) do |value|
+        @bwa.toggle_item(value.to_sym)
+      end
       spa.property("hold",
                    "Hold",
                    :boolean,
@@ -157,6 +172,8 @@ class MQTTBridge
         @bwa.hold = value
       end
       spa.property("priming", "Priming", :boolean, @bwa.priming, hass: { binary_sensor: { icon: "mdi:fast-forward" } })
+      spa.property("notification", "Notification", :enum, @bwa.notification || "none",
+                   format: BWA::Messages::Status::NOTIFICATIONS.values.compact + ["none"])
       spa.property("heating-mode",
                    "Heating Mode",
                    :enum,

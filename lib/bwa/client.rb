@@ -17,6 +17,7 @@ module BWA
                 hold?
                 priming
                 priming?
+                notification
                 heating_mode
                 temperature_scale
                 twenty_four_hour_time

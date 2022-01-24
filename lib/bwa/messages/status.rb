@@ -5,6 +5,7 @@ module BWA
     class Status < Message
       attr_accessor :hold,
                     :priming,
+                    :notification,
                     :heating_mode,
                     :twenty_four_hour_time,
                     :filter_cycles,
@@ -29,12 +30,20 @@ module BWA
       # additional features have been added in later versions
       MESSAGE_LENGTH = (24..32).freeze
 
+      NOTIFICATIONS = {
+        0x00 => nil,
+        0x0a => :ph,
+        0x04 => :filter,
+        0x09 => :sanitizer
+      }.freeze
+
       def initialize
         super
 
         @src = 0xff
         self.hold = false
         self.priming = false
+        self.notification = nil
         self.heating_mode = :ready
         @temperature_scale = :fahrenheit
         self.twenty_four_hour_time = false
@@ -58,14 +67,14 @@ module BWA
         flags = data[0].ord
         self.hold = (flags & 0x05 != 0)
 
-        flags = data[1].ord
-        self.priming = (flags & 0x01 == 0x01)
+        self.priming = data[1].ord == 0x01
         flags = data[5].ord
         self.heating_mode = case flags & 0x03
                             when 0x00 then :ready
                             when 0x01 then :rest
                             when 0x02 then :ready_in_rest
                             end
+        self.notification = data[1].ord == 0x03 && NOTIFICATIONS[data[6].ord]
         flags = data[9].ord
         self.temperature_scale = (flags & 0x01 == 0x01) ? :celsius : :fahrenheit
         self.twenty_four_hour_time = (flags & 0x02 == 0x02)
@@ -108,10 +117,17 @@ module BWA
       def serialize
         data = "\x00" * 24
         data[0] = (hold ? 0x05 : 0x00).chr
-        data[1] = (priming ? 0x01 : 0x00).chr
+        data[1] = if priming
+                    0x01
+                  elsif notification
+                    0x04
+                  else
+                    0x00
+                  end.chr
         data[5] = { ready: 0x00,
                     rest: 0x01,
                     ready_in_rest: 0x02 }[heating_mode].chr
+        data[6] = NOTIFICATIONS.invert[notification].chr
         flags = 0
         flags |= 0x01 if temperature_scale == :celsius
         flags |= 0x02 if twenty_four_hour_time
@@ -173,6 +189,7 @@ module BWA
 
         items << "hold" if hold
         items << "priming" if priming
+        items << "notification=#{notification}" if notification
         items << self.class.format_time(hour, minute, twenty_four_hour_time: twenty_four_hour_time)
         items << "#{current_temperature || "--"}/#{target_temperature}°#{temperature_scale.to_s[0].upcase}"
         items << "filter_cycles=#{filter_cycles.inspect}"
