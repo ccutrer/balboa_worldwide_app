@@ -172,9 +172,9 @@ module BWA
       desired = [desired, max_pump_speed].min
       current_pump_speed = [status.pumps[index], max_pump_speed].min
       times = (desired - current_pump_speed) % (max_pump_speed + 1)
-      times.times do
+      times.times do |i|
         toggle_pump(index)
-        sleep(0.1)
+        sleep(0.1) unless i == times - 1
       end
     end
 
@@ -204,9 +204,9 @@ module BWA
       desired = configuration.blower if desired == true
       desired = [desired, configuration.blower].min
       times = (desired - status.blower) % (configuration.blower + 1)
-      times.times do
+      times.times do |i|
         toggle_blower
-        sleep(0.1)
+        sleep(0.1) unless i == times - 1
       end
     end
 
@@ -272,7 +272,10 @@ module BWA
               else
                 0
               end
-      times.times { toggle_heating_mode }
+      times.times do |i|
+        toggle_heating_mode
+        sleep(0.1) unless i == times - 1
+      end
     end
   end
 end
