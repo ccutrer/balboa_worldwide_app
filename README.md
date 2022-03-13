@@ -141,6 +141,10 @@ These projects are all in various states, and may be more or less developed than
  * https://github.com/MHotchin/BalboaSpaComms - C++/Windows
  * https://github.com/jshank/bwalink - A Docker container hosting the Balboa Worldwide App gem and socat for remote access to a serial to IP device
 
+If you have the older GL/EL range such as the GL2000.
+
+ * https://github.com/netmindz/balboa_GL_ML_spa_control - A sensor app connecting to Home Assistant and protocol reverse engineering
+
 ## Thanks
 
  * @garbled1 for figuring out the checksums
