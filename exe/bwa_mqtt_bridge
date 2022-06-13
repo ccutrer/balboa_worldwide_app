@@ -156,7 +156,7 @@ class MQTTBridge
       spa.property("command",
                    "Send a command to the tub",
                    :enum,
-                   format: %w[normal_operation clear_notification],
+                   format: %w[normal_operation clear_notification soak],
                    retained: false,
                    non_standard_value_check: allow_toggles) do |value|
         @bwa.toggle_item(value.to_sym)

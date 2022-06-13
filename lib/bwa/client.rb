@@ -168,6 +168,12 @@ module BWA
 
       desired = 0 if desired == false
       max_pump_speed = configuration.pumps[index]
+
+      # turn all pumps off with a single command
+      if desired == 0 && configuration.pumps.length == 1 && max_pump_speed != 1
+        return toggle_item(:soak)
+      end
+
       desired = max_pump_speed if desired == true
       desired = [desired, max_pump_speed].min
       current_pump_speed = [status.pumps[index], max_pump_speed].min

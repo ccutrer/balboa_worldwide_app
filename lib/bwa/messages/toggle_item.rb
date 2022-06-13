@@ -20,6 +20,7 @@ module BWA
         light2: 0x12,
         aux1: 0x16,
         aux2: 0x17,
+        soak: 0x1d,
         hold: 0x3c,
         temperature_range: 0x50,
         heating_mode: 0x51
