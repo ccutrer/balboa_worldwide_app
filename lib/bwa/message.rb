@@ -64,7 +64,7 @@ module BWA
         BWA.logger.debug "discarding invalid data prior to message #{BWA.raw2str(data[0...offset])}" unless offset.zero?
 
         src = data[offset + 2].ord
-        klass = @messages.find { |k| k::MESSAGE_TYPE == message_type }
+        klass = @messages.find { |k| message_type == k::MESSAGE_TYPE }
 
         if klass
           valid_length = if klass::MESSAGE_LENGTH.respond_to?(:include?)
@@ -102,7 +102,7 @@ module BWA
         else
           print_hour = hour % 12
           print_hour = 12 if print_hour.zero?
-          format("%d:%02d%s", print_hour, minute, hour >= 12 ? "PM" : "AM")
+          format("%d:%02d%s", print_hour, minute, (hour >= 12) ? "PM" : "AM")
         end
       end
 

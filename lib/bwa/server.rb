@@ -43,7 +43,7 @@ module BWA
             when Messages::ConfigurationRequest
               send_configuration(socket)
             when Messages::ControlConfigurationRequest
-              message.type == 1 ? send_control_configuration(socket) : send_control_configuration2(socket)
+              (message.type == 1) ? send_control_configuration(socket) : send_control_configuration2(socket)
             when Messages::SetTargetTemperature
               temperature = message.temperature
               temperature /= 2.0 if @status.temperature_scale == :celsius
@@ -53,9 +53,9 @@ module BWA
             when Messages::ToggleItem
               case message.item
               when :heating_mode
-                @status.heating_mode = (@status.heating_mode == :rest ? :ready : :rest)
+                @status.heating_mode = ((@status.heating_mode == :rest) ? :ready : :rest)
               when :temperature_range
-                @status.temperature_range = (@status.temperature_range == :low ? :high : :low)
+                @status.temperature_range = ((@status.temperature_range == :low) ? :high : :low)
               when :pump1
                 @status.pump1 = (@status.pump1 + 1) % 3
               when :pump2

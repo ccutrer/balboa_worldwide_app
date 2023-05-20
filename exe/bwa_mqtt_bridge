@@ -115,7 +115,7 @@ class MQTTBridge
           next if speeds.zero?
 
           property = @homie["spa"]["pump#{i + 1}"]
-          property.value = speeds == 1 ? @bwa.pumps[i] != 0 : @bwa.pumps[i]
+          property.value = (speeds == 1) ? @bwa.pumps[i] != 0 : @bwa.pumps[i]
         end
         @bwa.configuration.lights.each_with_index do |exists, i|
           next unless exists
@@ -172,7 +172,10 @@ class MQTTBridge
         @bwa.hold = value
       end
       spa.property("priming", "Priming", :boolean, @bwa.priming, hass: { binary_sensor: { icon: "mdi:fast-forward" } })
-      spa.property("notification", "Notification", :enum, @bwa.notification || "none",
+      spa.property("notification",
+                   "Notification",
+                   :enum,
+                   @bwa.notification || "none",
                    format: BWA::Messages::Status::NOTIFICATIONS.values.compact + ["none"])
       spa.property("heating-mode",
                    "Heating Mode",

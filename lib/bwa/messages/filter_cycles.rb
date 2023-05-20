@@ -3,8 +3,13 @@
 module BWA
   module Messages
     class FilterCycles < Message
-      attr_accessor :cycle1_start_hour, :cycle1_start_minute, :cycle1_duration,
-                    :cycle2_enabled, :cycle2_start_hour, :cycle2_start_minute, :cycle2_duration
+      attr_accessor :cycle1_start_hour,
+                    :cycle1_start_minute,
+                    :cycle1_duration,
+                    :cycle2_enabled,
+                    :cycle2_start_hour,
+                    :cycle2_start_minute,
+                    :cycle2_duration
       alias_method :cycle2_enabled?, :cycle2_enabled
 
       MESSAGE_TYPE = "\xbf\x23".b
