@@ -42,7 +42,9 @@ module BWA
         @io = TCPSocket.new(uri.host, uri.port || 4257)
       when "telnet", "rfc2217"
         require "net/telnet/rfc2217"
-        @io = Net::Telnet::RFC2217.new("Host" => uri.host, "Port" => uri.port || 23, "baud" => 115_200)
+        @io = Net::Telnet::RFC2217.new(uri.host,
+                                       port: uri.port || 23,
+                                       baud: 115_200)
         @queue = []
       else
         require "ccutrer-serialport"
