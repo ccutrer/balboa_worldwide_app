@@ -107,7 +107,8 @@ This gem supports using an RS-485 direct connection to the hot tub if you don't
 have the Wifi module, or would simply like something more reliable. It is
 possible to connect to the GPIOs on a Raspberry Pi using a something like a
 MAX13487 transceiver, or to use a USB RS-485 dongle such as
-[this one from Amazon](https://www.amazon.com/gp/product/B07B416CPK). Setting
+[this one from Amazon](https://www.amazon.com/gp/product/B07B416CPK).
+Any adapter based on the MAX485 chip is _not_ supported. Setting
 up a serial device in Linux with GPIOs is beyond the scope of this
 documentation.
 
