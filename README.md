@@ -4,9 +4,9 @@ This gem is a Ruby library for interacting with Wifi spa controllers from
 Balboa Water Group. There is no documentation on the protocol, and it has
 been reverse engineered by various individuals from both packet captures
 and tapping directly into the controller's communication bus. Not all
-messages have been deciphered, nor has automatic configuration been
-implemented. At the moment, it assumes two 2-speed pumps, a circ pump, a
-heater, and a single lights circuit.
+messages have been deciphered. Configuration is automatic for those
+accessories that the protocol has been deciphered (number of pumps and
+speeds, lighting, etc.).
 
 ## MQTT/Homie Bridge
 
