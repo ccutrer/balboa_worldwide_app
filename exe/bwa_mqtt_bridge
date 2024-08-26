@@ -378,7 +378,7 @@ class MQTTBridge
 
   def update_filter_cycles(prop, value)
     new_config = @bwa.filter_cycles.dup
-    new_config.public_send("#{prop}=", value)
+    new_config.public_send(:"#{prop}=", value)
     @bwa.update_filter_cycles(new_config)
   end
 
