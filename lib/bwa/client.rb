@@ -48,7 +48,7 @@ module BWA
         @queue = []
       else
         require "ccutrer-serialport"
-        @io = CCutrer::SerialPort.new(uri.path, baud: 115_200)
+        @io = CCutrer::SerialPort.new(uri.path, baud: 115_200, data_bits: 8, parity: :none, stop_bits: 1)
         @queue = []
       end
       @src = 0x0a
