@@ -395,7 +395,7 @@ class MQTTBridge
     end
 
     @homie["spa"]["current-temperature"].hass_sensor(device_class: :temperature)
-    @homie["spa"]["target-temperature"].hass_number(icon: "mdi:thermometer")
+    @homie["spa"]["target-temperature"].hass_number(icon: "mdi:thermometer", step: 0.5)
   end
 end
 
