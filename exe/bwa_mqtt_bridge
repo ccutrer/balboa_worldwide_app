@@ -389,13 +389,14 @@ class MQTTBridge
     if @bwa.temperature_scale == :celsius
       @homie["spa"]["current-temperature"].format = 0..42
       @homie["spa"]["target-temperature"].format = 10..40
+      @homie["spa"]["target-temperature"].hass_number(icon: "mdi:thermometer", step: 0.5)
     else
       @homie["spa"]["current-temperature"].format = 32..108
       @homie["spa"]["target-temperature"].format = 50..106
+      @homie["spa"]["target-temperature"].hass_number(icon: "mdi:thermometer", step: 1)
     end
 
     @homie["spa"]["current-temperature"].hass_sensor(device_class: :temperature)
-    @homie["spa"]["target-temperature"].hass_number(icon: "mdi:thermometer", step: 0.5)
   end
 end
 
