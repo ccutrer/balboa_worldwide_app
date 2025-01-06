@@ -29,7 +29,7 @@ module BWA
 
       MESSAGE_TYPE = "\xaf\x13".b
       # additional features have been added in later versions
-      MESSAGE_LENGTH = (24..32).freeze
+      MESSAGE_LENGTH = (23..32).freeze
 
       NOTIFICATIONS = {
         0x00 => nil,

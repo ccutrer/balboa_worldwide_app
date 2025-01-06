@@ -67,8 +67,8 @@ module BWA
         klass = @messages.find { |k| message_type == k::MESSAGE_TYPE }
 
         if klass
-          valid_length = if klass::MESSAGE_LENGTH.respond_to?(:include?)
-                           klass::MESSAGE_LENGTH.include?(length - 5)
+          valid_length = if klass::MESSAGE_LENGTH.respond_to?(:cover?)
+                           klass::MESSAGE_LENGTH.cover?(length - 5)
                          else
                            length - 5 == klass::MESSAGE_LENGTH
                          end
