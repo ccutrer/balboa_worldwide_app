@@ -4,7 +4,7 @@
 require "sd_notify"
 require "set"
 require "json"
-require "mqtt/home_assistant"
+require "mqtt/homie/home_assistant"
 
 require "bwa/logger"
 require "bwa/client"
@@ -153,14 +153,24 @@ class MQTTBridge
     end
 
     @homie.node("spa", "Hot Tub", @bwa.model) do |spa|
-      spa.property("command",
-                   "Send a command to the tub",
-                   :enum,
-                   format: %w[normal_operation clear_notification soak],
-                   retained: false,
-                   non_standard_value_check: allow_toggles) do |value|
+      command = spa.property("command",
+                             "Send a command to the tub",
+                             :enum,
+                             format: %w[normal_operation clear_notification soak],
+                             retained: false,
+                             non_standard_value_check: allow_toggles) do |value|
         @bwa.toggle_item(value.to_sym)
       end
+      command.hass_button(name: "Clear Notification",
+                          object_id: "clear_notification",
+                          payload_press: "clear_notification")
+      command.hass_button(name: "Normal Operation",
+                          object_id: "normal_operation",
+                          payload_press: "normal_operation")
+      command.hass_button(name: "Soak",
+                          object_id: "soak",
+                          payload_press: "soak")
+
       spa.property("hold",
                    "Hold",
                    :boolean,
