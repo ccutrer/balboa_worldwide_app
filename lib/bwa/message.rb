@@ -29,7 +29,7 @@ module BWA
 
       def parse(data)
         offset = -1
-        message_type = length = nil
+        length = nil
         loop do
           offset += 1
           # Not enough data for a full message; return and hope for more

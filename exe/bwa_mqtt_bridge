@@ -411,7 +411,7 @@ class MQTTBridge
       current_temperature_property: "current-temperature",
       mode_property: "heating",
       modes: %i[off electric],
-      mode_state_template:  <<~JINJA,
+      mode_state_template: <<~JINJA,
         {% if value == 'true' %}
           electric
         {% elif value == 'false' %}
