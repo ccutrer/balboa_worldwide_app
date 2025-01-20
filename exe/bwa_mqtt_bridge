@@ -217,10 +217,9 @@ class MQTTBridge
       spa.property("heating",
                    "Heating",
                    :boolean,
-                   @bwa.heating?,
-                   hass: {
-                     binary_sensor: { device_class: :running, icon: "mdi:hot-tub" }
-                   })
+                   @bwa.heating?)
+      @homie.mqtt.unpublish_hass_binary_sensor("spa_heating", node_id: @homie.id)
+
       spa.property("temperature-range",
                    "Temperature Range",
                    :enum,
@@ -236,6 +235,8 @@ class MQTTBridge
       spa.property("target-temperature", "Target Water Temperature", :float, @bwa.target_temperature) do |value|
         @bwa.target_temperature = value
       end
+      @homie.mqtt.unpublish_hass_sensor("spa_current-temperature", node_id: @homie.id)
+      @homie.mqtt.unpublish_hass_sensor("spa_target-temperature", node_id: @homie.id)
       update_temperature_scale
 
       unless @bwa.configuration.blower.zero?
@@ -406,6 +407,20 @@ class MQTTBridge
       @homie["spa"]["target-temperature"].hass_number(icon: "mdi:thermometer", step: 1)
     end
 
+    @homie["spa"].hass_water_heater(
+      current_temperature_property: "current-temperature",
+      mode_property: "heating",
+      modes: %i[off electric],
+      mode_state_template:  <<~JINJA,
+        {% if value == 'true' %}
+          electric
+        {% elif value == 'false' %}
+          off
+        {% endif %}
+      JINJA
+      temperature_property: "target-temperature",
+      icon: "mdi:hot-tub"
+    )
     @homie["spa"]["current-temperature"].hass_sensor(device_class: :temperature)
   end
 end
