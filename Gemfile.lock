@@ -1,10 +1,10 @@
 PATH
   remote: .
   specs:
-    balboa_worldwide_app (2.2.0)
+    balboa_worldwide_app (2.2.1)
       ccutrer-serialport (~> 1.0)
       digest-crc (~> 0.4)
-      mqtt-homie-homeassistant (~> 1.0, >= 1.0.4)
+      mqtt-homie-homeassistant (~> 1.0, >= 1.0.5)
       net-telnet-rfc2217 (~> 1.0)
       sd_notify (~> 0.1.1)
 
@@ -17,7 +17,7 @@ GEM
       ffi (~> 1.9, >= 1.9.3)
     digest-crc (0.6.5)
       rake (>= 12.0.0, < 14.0.0)
-    ffi (1.17.1-x86_64-linux-gnu)
+    ffi (1.17.1)
     homie-mqtt (1.6.3)
       mqtt-ccutrer (~> 1.0, >= 1.0.3)
       ruby2_keywords (~> 0.0.5)
@@ -27,7 +27,7 @@ GEM
     mqtt-homeassistant (1.0.2)
       json (~> 2.0)
       mqtt-ccutrer (~> 1.0, >= 1.0.3)
-    mqtt-homie-homeassistant (1.0.4)
+    mqtt-homie-homeassistant (1.0.5)
       homie-mqtt (~> 1.6)
       mqtt-homeassistant (~> 1.0, >= 1.0.2)
     net-telnet (0.2.0)
