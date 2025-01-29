@@ -8,7 +8,7 @@ Gem::Specification.new do |s|
   s.platform = Gem::Platform::RUBY
   s.authors = ["Cody Cutrer"]
   s.email = "cody@cutrer.com'"
-  s.homepage = "https://github.com/ccutrer/bwa"
+  s.homepage = "https://github.com/ccutrer/balboa_wordlwide_app"
   s.summary = "Library for communication with Balboa Water Group's WiFi module or RS-485"
   s.license = "MIT"
   s.metadata = {
