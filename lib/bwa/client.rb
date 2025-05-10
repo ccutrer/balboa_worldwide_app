@@ -76,7 +76,7 @@ module BWA
             eofs += 1
             raise if eofs == 5
 
-            @io.wait_readable
+            @io.wait_readable(5)
             retry
           end
           next
