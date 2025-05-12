@@ -8,6 +8,15 @@ messages have been deciphered. Configuration is automatic for those
 accessories that the protocol has been deciphered (number of pumps and
 speeds, lighting, etc.).
 
+> [!IMPORTANT]
+> At this time, I'm unable to add any new features or bug fixes myself, nor
+> validate any PRs, since my own spa died (after 11 years!). It's still
+> undecided if I'll be repairing the current spa, or get a new one. If it ends
+> up being the latter, it remains to be seen if the control board will be the
+> same, and I can pick this project back up. In the mean time, I will continue
+> to code review and merge PRs that look reasonable, but I will have to rely
+> on the community to fully ensure their stability.
+
 ## MQTT/Homie Bridge
 
 An MQTT Bridge is provided to allow easy integration with other systems. You
