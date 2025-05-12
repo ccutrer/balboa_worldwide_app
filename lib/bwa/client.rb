@@ -76,7 +76,11 @@ module BWA
             eofs += 1
             raise if eofs == 5
 
-            @io.wait_readable
+            @io.wait_readable(5)
+            retry
+          rescue Errno::ECONNRESET
+            BWA.logger.debug "ECONNRESET occured; retrying"
+            @io.wait_readable(5)
             retry
           end
           next
