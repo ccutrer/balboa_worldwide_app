@@ -78,7 +78,7 @@ module BWA
 
             @io.wait_readable(5)
             retry
-          rescue Errno::ECONNRESET => e
+          rescue Errno::ECONNRESET
             BWA.logger.debug "ECONNRESET occured; retrying"
             @io.wait_readable(5)
             retry
