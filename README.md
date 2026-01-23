@@ -150,7 +150,8 @@ These projects are all in various states, and may be more or less developed than
  * https://github.com/plmilord/Hass.io-custom-component-spaclient = Hass.io integration
  * https://github.com/MHotchin/BalboaSpaComms - C++/Windows
  * https://github.com/jshank/bwalink - A Docker container hosting the Balboa Worldwide App gem and socat for remote access to a serial to IP device
- # https://github.com/mikes222/balboa - Java library/CLI
+ * https://github.com/mikes222/balboa - Java library/CLI
+ * https://github.com/kgstorm/Balboa-GS100-with-VL260-topside - ESPhome project for the GS100
 
 If you have the older GL/EL range such as the GL2000.
 
