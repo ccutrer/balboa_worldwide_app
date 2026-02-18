@@ -27,9 +27,4 @@ Gem::Specification.new do |s|
   s.add_dependency "mqtt-homie-homeassistant", "~> 1.0", ">= 1.0.5"
   s.add_dependency "net-telnet-rfc2217", "~> 1.0"
   s.add_dependency "sd_notify", "~> 0.1.1"
-
-  s.add_development_dependency "byebug", "~> 11.0"
-  s.add_development_dependency "rake", "~> 13.0"
-  s.add_development_dependency "rubocop-inst", "~> 1"
-  s.add_development_dependency "rubocop-rake", "~> 0.6"
 end
