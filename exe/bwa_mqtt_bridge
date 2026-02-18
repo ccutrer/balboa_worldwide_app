@@ -24,7 +24,7 @@ class MQTTBridge
   def initialize(mqtt_uri, bwa, device_id: "bwa", root_topic: "homie")
     Thread.abort_on_exception = true
 
-    @homie = MQTT::Homie::Device.new(device_id, "BWA Link", mqtt: mqtt_uri, root_topic: root_topic)
+    @homie = MQTT::Homie::Device.new(device_id, "BWA Link", mqtt: mqtt_uri, root_topic:)
     @bwa = bwa
 
     # spin until we have a full configuration
@@ -282,7 +282,7 @@ class MQTTBridge
                      hass: { binary_sensor: { device_class: :running, icon: "mdi:sync" } })
       end
 
-      single_pump = @bwa.configuration.pumps.count { |speeds| !speeds.zero? } == 1
+      single_pump = @bwa.configuration.pumps.one? { |speeds| !speeds.zero? }
       @bwa.configuration.pumps.each_with_index do |speeds, i|
         next if speeds.zero?
 

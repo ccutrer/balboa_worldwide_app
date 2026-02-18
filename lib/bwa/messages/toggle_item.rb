@@ -37,7 +37,7 @@ module BWA
         return true if BWA.verbosity >= 2
         # dunno why we receive this, but somebody is spamming the bus
         # trying to toggle an item we don't know
-        return false if item == 0 # rubocop:disable Style/NumericPredicate could be a symbol
+        return false if item == 0 # rubocop:disable Style/NumericPredicate -- could be a symbol
 
         true
       end

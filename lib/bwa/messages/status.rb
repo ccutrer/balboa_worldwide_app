@@ -153,7 +153,7 @@ module BWA
           data[2] = (current_temperature ? (current_temperature * 2).to_i : 0xff).chr
           data[20] = (target_temperature * 2).to_i.chr
         else
-          data[2] = (current_temperature.to_i || 0xff).chr
+          data[2] = (current_temperature&.to_i || 0xff).chr
           data[20] = target_temperature.to_i.chr
         end
 
@@ -191,7 +191,7 @@ module BWA
         items << "hold" if hold
         items << "priming" if priming
         items << "notification=#{notification}" if notification
-        items << self.class.format_time(hour, minute, twenty_four_hour_time: twenty_four_hour_time)
+        items << self.class.format_time(hour, minute, twenty_four_hour_time:)
         items << "#{current_temperature || "--"}/#{target_temperature}°#{temperature_scale.to_s[0].upcase}"
         items << "filter_cycles=#{filter_cycles.inspect}"
         items << heating_mode

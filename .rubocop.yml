@@ -2,7 +2,7 @@ inherit_gem:
   rubocop-inst:
   - rubocop.yml
 
-require:
+plugins:
   - rubocop-rake
 
 AllCops:
