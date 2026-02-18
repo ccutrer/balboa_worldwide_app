@@ -64,7 +64,7 @@ module BWA
       loop do
         message, bytes_read = Message.parse(@buffer)
         # discard how much we read
-        @buffer = @buffer[bytes_read..-1] if bytes_read
+        @buffer = @buffer[bytes_read..] if bytes_read
         method = @io.respond_to?(:readpartial) ? :readpartial : :read
         unless message
           # one EOF is just serial ports saying they have no data;

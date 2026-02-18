@@ -2,7 +2,6 @@
 # frozen_string_literal: true
 
 require "sd_notify"
-require "set"
 require "json"
 require "mqtt/homie/home_assistant"
 

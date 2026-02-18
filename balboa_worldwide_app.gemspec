@@ -19,7 +19,7 @@ Gem::Specification.new do |s|
   s.executables = Dir["exe/*"].map { |f| File.basename(f) }
   s.files = Dir["{exe,lib}/**/*"]
 
-  s.required_ruby_version = ">= 2.5"
+  s.required_ruby_version = ">= 3.2"
 
   s.add_dependency "ccutrer-serialport", "~> 1.0"
   s.add_dependency "digest-crc", "~> 0.4"

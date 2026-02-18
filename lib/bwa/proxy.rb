@@ -41,7 +41,7 @@ module BWA
         end
         data_length = leftover_data[1].ord
         data = leftover_data[0...(data_length + 2)]
-        leftover_data = leftover_data[(data_length + 2)..-1] || ""
+        leftover_data = leftover_data[(data_length + 2)..] || ""
         begin
           message = Message.parse(data)
           BWA.logger.info "#{tag}: #{message.inspect}"
