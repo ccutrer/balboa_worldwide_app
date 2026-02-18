@@ -1,0 +1,5 @@
+repos:
+- repo: https://github.com/mattlqx/pre-commit-ruby
+  rev: v1.3.6
+  hooks:
+    - id: rubocop
