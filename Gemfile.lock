@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    balboa_worldwide_app (2.3.2)
+    balboa_worldwide_app (2.4.0)
       ccutrer-serialport (~> 1.0)
       digest-crc (~> 0.4)
       mqtt-homeassistant (>= 1.0.3)
@@ -112,4 +112,4 @@ DEPENDENCIES
   rubocop-rake (~> 0.6)
 
 BUNDLED WITH
-   4.0.10
+  4.0.10
