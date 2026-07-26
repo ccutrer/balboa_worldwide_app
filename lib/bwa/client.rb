@@ -46,6 +46,16 @@ module BWA
                                        port: uri.port || 23,
                                        baud: 115_200)
         @queue = []
+      when "esphome"
+        begin
+          gem "esphome", "~> 1.1"
+          require "esphome/serial_proxy"
+        rescue LoadError
+          warn "Please `gem install esphome ~> 1.1` before using an ESPHome serial proxy"
+          exit 1
+        end
+        @io = ESPHome::SerialProxy.open(uri, baud: 115_200, data_bits: 8, parity: :none, stop_bits: 1)
+        @queue = []
       else
         require "ccutrer-serialport"
         @io = CCutrer::SerialPort.new(uri.path, baud: 115_200, data_bits: 8, parity: :none, stop_bits: 1)

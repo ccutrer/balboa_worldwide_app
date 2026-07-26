@@ -141,6 +141,59 @@ As you can see in my case, the two black wires ended up being RS-485. The surefi
 RFC2217 serial ports are also supported, if you want to run thie bridge on a different server than is directly connected to the spa. You can use `ser2net` to create such a serial port like `ser2net -C "2217:telnet:0:/dev/ttyHotTub:remctl" -d`, and then just specify the address as `rfc2217://hostname:2217/`. `socat` _cannot_ be used, because we need to
 properly configure the serial port, and know that it is a serial port and not the BWA WiFi bridge, since the protocol is slightly different.
 
+### ESPHome Serial Proxy
+
+[ESPHome](https://esphome.io/) [serial proxies](https://esphome.io/components/serial_proxy/) are also supported.
+First, you can build an adapter with an ESP32 device and a MAX485 module:
+
+![Lolin ESP32-C3-Mini RS485 Adapter](doc/esp_adapter.jpg)
+
+DI on the MAX485 connects to your TX pin, DO to the RX pin, and DE to the flow control pin.
+RE should be connected to DE. VCC connects to +5V (VCC or VBUS on the ESP32), and GND to GND.
+Then flash an ESPHome device with a config similar to this:
+
+```yaml
+esphome:
+  name: hot-tub
+  friendly_name: Hot Tub
+
+esp32:
+  board: esp32-c3-devkitm-1
+  
+api:
+  encryption:
+    key: "a random key"
+
+ota:
+  - platform: esphome
+    password: "a random password"
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  ap:
+    password: "a random password"
+
+captive_portal:
+
+uart:
+  - id: rs485
+    tx_pin: GPIO21
+    rx_pin: GPIO20
+    flow_control_pin: GPIO10
+    baud_rate: 4800
+    parity: ODD
+
+serial_proxy:
+  uart_id: rs485
+  name: SDN
+  port_type: RS485
+```
+
+You will also need to `gem install esphome` on the computer running the MQTT bridge.
+Then any place you would reference a serial port in the command line, you can use
+"esphome://:encryption_key@hostname".
+
 ## Related Projects
 
 These projects are all in various states, and may be more or less developed than this one in varying aspects.
