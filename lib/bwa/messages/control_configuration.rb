@@ -26,7 +26,7 @@ module BWA
 
     class ControlConfiguration2 < Message
       MESSAGE_TYPE = "\xbf\x2e".b
-      MESSAGE_LENGTH = 6
+      MESSAGE_LENGTH = (6..7)
 
       attr_accessor :pumps, :lights, :circulation_pump, :blower, :mister, :aux
 
