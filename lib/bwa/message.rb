@@ -75,8 +75,13 @@ module BWA
           unless valid_length
             BWA.logger.debug " read: #{BWA.raw2str(data.slice(offset, length + 2))}"
 
-            raise InvalidMessage.new("Unrecognized data length (#{length}) for message #{klass}",
-                                     data)
+            # RS-485 is a shared bus, and the pack may not be the only device on it.
+            # A checksum-valid frame whose type matches one of ours but whose length
+            # does not is most likely addressed to something else; skip it rather than
+            # tearing down the connection.
+            BWA.logger.warn("Unrecognized data length (#{length}) for message #{klass}; " \
+                            "raw: #{BWA.raw2str(data.slice(offset, length + 2))}; skipping frame")
+            klass = Unrecognized
           end
         else
           BWA.logger.info(
