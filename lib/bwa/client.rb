@@ -3,6 +3,7 @@
 require "forwardable"
 require "uri"
 
+require "bwa/audio_state"
 require "bwa/logger"
 require "bwa/message"
 
@@ -10,7 +11,7 @@ module BWA
   class Client
     extend Forwardable
 
-    attr_reader :status, :control_configuration, :configuration, :filter_cycles
+    attr_reader :status, :control_configuration, :configuration, :filter_cycles, :audio
 
     delegate model: :control_configuration
     delegate %i[hold
@@ -63,6 +64,7 @@ module BWA
       end
       @src = 0x0a
       @buffer = +""
+      @audio = AudioState.new
     end
 
     def full_configuration?
@@ -108,6 +110,7 @@ module BWA
       @filter_cycles = message.dup if message.is_a?(Messages::FilterCycles)
       @control_configuration = message.dup if message.is_a?(Messages::ControlConfiguration)
       @configuration = message.dup if message.is_a?(Messages::ControlConfiguration2)
+      @audio.update(message)
       message
     end
 
@@ -265,6 +268,66 @@ module BWA
 
     def toggle_temperature_range
       toggle_item(0x50)
+    end
+
+    # Music (the bba amplifier). The new state shows up in #audio once the
+    # amplifier reports it.
+
+    def send_audio_command(command, argument = 0)
+      send_message(Messages::AudioCommand.new(command, argument))
+    end
+
+    # Asks the amplifier for the next part of its state that has not been heard
+    # yet. Call it regularly (it limits itself); see AudioState#next_request.
+    def request_audio_state
+      index = audio.next_request
+      send_audio_command(:request, index) if index
+    end
+
+    def audio_power=(desired)
+      send_audio_command(:power, desired ? 1 : 0)
+    end
+
+    def audio_source=(source)
+      code = Messages::AudioPlayback::SOURCES.key(source)
+      raise ArgumentError, "source must be :bluetooth or :line" unless code
+
+      send_audio_command(:source, code)
+    end
+
+    def audio_play
+      send_audio_command(:play)
+    end
+
+    def audio_pause
+      send_audio_command(:pause)
+    end
+
+    def audio_next
+      send_audio_command(:next)
+    end
+
+    def audio_previous
+      send_audio_command(:previous)
+    end
+
+    def audio_volume=(volume)
+      send_audio_command(:volume, volume.clamp(0, audio.max_volume || 0xff))
+    end
+
+    def audio_mute=(desired)
+      send_audio_command(:mute, desired ? 1 : 0)
+    end
+
+    def audio_repeat=(mode)
+      code = Messages::AudioPlayback::REPEAT_MODES.key(mode)
+      raise ArgumentError, "repeat must be :off, :one or :all" unless code
+
+      send_audio_command(:repeat, code)
+    end
+
+    def audio_shuffle=(desired)
+      send_audio_command(:shuffle, desired ? 1 : 0)
     end
 
     def temperature_range=(desired)

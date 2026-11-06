@@ -150,6 +150,84 @@ Message type 0a bf 2e
 ```
 
 
+### Music
+
+Spas with the bba music system (a Bluetooth amplifier on the bus, controlled
+from the spaTouch panel's music screen) have these too. The amplifier sends
+them from its own channel (0x52 here), only when something changes. The pack
+repeats each as `ff af bX`, with the same content.
+
+Text fields are null terminated.
+
+#### Music Playback
+Sent about once a second while playing.
+
+Message type 52 bf b0
+
+```
+ 0  1  2  3  4  5  6  7  8
+SR 03 ST PH PL DH DL RP SH
+```
+
+ * SR - source: 0x00 line in, 0x01 Bluetooth (on line in, the rest is 0)
+ * ST - state: 0x00 playing, 0x01 paused, 0x02 stopped. Flickers to paused
+   for a moment while playing, and stays at playing when the phone pauses by
+   itself; the position moving is the better sign of playing.
+ * PH PL - position in seconds, big endian
+ * DH DL - length of the song in seconds, big endian
+ * RP - repeat: 0x00 off, 0x01 one, 0x02 all
+ * SH - shuffle: 0x00 off, 0x01 on
+
+#### Music Text
+Sent when the song changes.
+
+Message type 52 bf b1
+
+```
+ 0  1  2 ...
+FD LN <text> 00
+```
+
+ * FD - field: 0x00 title, 0x01 album, 0x02 artist
+ * LN - length of the text
+
+#### Music Volume
+
+Message type 52 bf b2
+
+```
+ 0  1  2  3  4  5  6  7
+VL 00 00 MT 00 00 MX 00
+```
+
+ * VL - volume. Each source keeps its own.
+ * MT - mute: 0x00 off, 0x01 on
+ * MX - the highest volume (0x15, 21)
+
+#### Music Bluetooth
+
+Message type 52 bf b3
+
+```
+ 0  1 ... 6  7  8 ...
+ST <MAC>    LN <name> 00
+```
+
+ * ST - 0x01 a phone is connected, 0x02 waiting for one
+ * MAC - the amplifier's Bluetooth address
+ * LN - length of the name phones see, e.g. "BBA Spa Music"
+
+#### Music Power
+
+Message type 52 bf b4
+
+```
+ 0  1  2
+PW 02 11
+```
+
+ * PW - 0x00 off, 0x01 on
+
 ## Outgoing Messages
 
 ### Configuration Request
@@ -188,6 +266,34 @@ II 00
    * 0x51 - heating mode
    * 0x50 - temperature range
   
+### Music Command
+
+Message type 0a bf b5
+
+```
+ 0  1
+CM AR
+```
+
+The pack passes it on to the amplifier as `52 bf b5 CM AR`, which can be seen
+on the bus. The panel's own music buttons end up as the same messages.
+
+ * CM AR - command and argument:
+   * 0x00 0x00/0x01 - power off/on
+   * 0x01 0x00/0x01 - source line in/Bluetooth
+   * 0x02 0x00 - play
+   * 0x03 0x00 - pause
+   * 0x05 0x00 - next song
+   * 0x06 0x00 - previous song
+   * 0x09 VL - set the volume to VL
+   * 0x0A 0x00/0x01 - mute off/on
+   * 0x0D RP - repeat (0x00 off, 0x01 one, 0x02 all)
+   * 0x0E 0x00/0x01 - shuffle off/on
+   * 0x11 NN - report a part of the state again: 0x00 playback, 0x01
+     volume, 0x02 Bluetooth, 0x03 power, 0x04 title, 0x05 album, 0x06 artist.
+     The amplifier only reports changes, so this is how to learn its state.
+     Answers sometimes go missing; ask again.
+
 ### Set Temperature
 
 Message type 0a bf 20
