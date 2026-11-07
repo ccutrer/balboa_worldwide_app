@@ -129,7 +129,7 @@ class MQTTBridge
 
         # The status comes every second: a good pace to catch up on the music
         # system, and to notice that a song stopped moving.
-        @bwa.request_audio_state
+        @bwa.audio.refresh
         update_audio
 
         # Tell systemd we are still alive and kicking. Ignored if systemd not in use.
@@ -140,12 +140,12 @@ class MQTTBridge
     end
   end
 
-  AUDIO_MESSAGES = [BWA::Messages::AudioBluetooth,
-                    BWA::Messages::AudioCommand,
-                    BWA::Messages::AudioPlayback,
-                    BWA::Messages::AudioPower,
-                    BWA::Messages::AudioText,
-                    BWA::Messages::AudioVolume].freeze
+  AUDIO_MESSAGES = [BWA::Messages::Audio::Bluetooth,
+                    BWA::Messages::Audio::Command,
+                    BWA::Messages::Audio::Playback,
+                    BWA::Messages::Audio::Power,
+                    BWA::Messages::Audio::Text,
+                    BWA::Messages::Audio::Volume].freeze
   private_constant :AUDIO_MESSAGES
 
   # The music node shows up once an amplifier has been heard, so spas
@@ -183,7 +183,7 @@ class MQTTBridge
     audio = @bwa.audio
     @homie.node("audio", "Music", "Audio") do |node|
       node.property("power", "Power", :boolean, audio.on?, hass: { switch: { icon: "mdi:music" } }) do |value|
-        @bwa.audio_power = value
+        @bwa.audio.power = value
       end
       node.property("source",
                     "Source",
@@ -191,7 +191,7 @@ class MQTTBridge
                     audio.source,
                     format: %w[bluetooth line],
                     hass: { select: { icon: "mdi:speaker-bluetooth" } }) do |value|
-        @bwa.audio_source = value.to_sym
+        @bwa.audio.source = value.to_sym
       end
       node.property("playback",
                     "Playback",
@@ -199,14 +199,14 @@ class MQTTBridge
                     audio.playback,
                     format: %w[playing paused stopped],
                     hass: { select: { icon: "mdi:play-pause" } }) do |value|
-        (value == "playing") ? @bwa.audio_play : @bwa.audio_pause
+        (value == "playing") ? @bwa.audio.play : @bwa.audio.pause
       end
       command = node.property("command",
                               "Command",
                               :enum,
                               format: %w[play pause next previous],
                               retained: false) do |value|
-        @bwa.public_send(:"audio_#{value}")
+        @bwa.audio.public_send(value)
       end
       command.hass_button(name: "Next Song", object_id: "audio_next", payload_press: "next", icon: "mdi:skip-next")
       command.hass_button(name: "Previous Song",
@@ -222,10 +222,10 @@ class MQTTBridge
                     audio.volume,
                     format: 0..(audio.max_volume || DEFAULT_MAX_VOLUME),
                     hass: { number: { icon: "mdi:volume-high" } }) do |value|
-        @bwa.audio_volume = value
+        @bwa.audio.volume = value
       end
       node.property("mute", "Mute", :boolean, audio.muted?, hass: { switch: { icon: "mdi:volume-off" } }) do |value|
-        @bwa.audio_mute = value
+        @bwa.audio.muted = value
       end
       node.property("repeat",
                     "Repeat",
@@ -233,14 +233,14 @@ class MQTTBridge
                     audio.repeat,
                     format: %w[off one all],
                     hass: { select: { icon: "mdi:repeat" } }) do |value|
-        @bwa.audio_repeat = value.to_sym
+        @bwa.audio.repeat = value.to_sym
       end
       node.property("shuffle",
                     "Shuffle",
                     :boolean,
                     audio.shuffle?,
                     hass: { switch: { icon: "mdi:shuffle" } }) do |value|
-        @bwa.audio_shuffle = value
+        @bwa.audio.shuffle = value
       end
       node.property("title", "Title", :string, audio.title, hass: { sensor: { icon: "mdi:music-note" } })
       node.property("artist", "Artist", :string, audio.artist, hass: { sensor: { icon: "mdi:account-music" } })

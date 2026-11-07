@@ -137,12 +137,7 @@ module BWA
   end
 end
 
-require "bwa/messages/audio_bluetooth"
-require "bwa/messages/audio_command"
-require "bwa/messages/audio_playback"
-require "bwa/messages/audio_power"
-require "bwa/messages/audio_text"
-require "bwa/messages/audio_volume"
+require "bwa/messages/audio"
 require "bwa/messages/configuration"
 require "bwa/messages/configuration_request"
 require "bwa/messages/control_configuration"
