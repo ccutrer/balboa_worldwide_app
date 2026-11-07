@@ -3,6 +3,7 @@
 require "forwardable"
 require "uri"
 
+require "bwa/audio"
 require "bwa/logger"
 require "bwa/message"
 
@@ -10,7 +11,7 @@ module BWA
   class Client
     extend Forwardable
 
-    attr_reader :status, :control_configuration, :configuration, :filter_cycles
+    attr_reader :status, :control_configuration, :configuration, :filter_cycles, :audio
 
     delegate model: :control_configuration
     delegate %i[hold
@@ -63,6 +64,7 @@ module BWA
       end
       @src = 0x0a
       @buffer = +""
+      @audio = Audio.new(self)
     end
 
     def full_configuration?
@@ -108,6 +110,7 @@ module BWA
       @filter_cycles = message.dup if message.is_a?(Messages::FilterCycles)
       @control_configuration = message.dup if message.is_a?(Messages::ControlConfiguration)
       @configuration = message.dup if message.is_a?(Messages::ControlConfiguration2)
+      @audio.update(message)
       message
     end
 

@@ -137,6 +137,7 @@ module BWA
   end
 end
 
+require "bwa/messages/audio"
 require "bwa/messages/configuration"
 require "bwa/messages/configuration_request"
 require "bwa/messages/control_configuration"

@@ -44,6 +44,23 @@ value. These properties are:
  * pump*
  * light*
 
+### Music
+
+Spas with Balboa's music system (the bba Bluetooth amplifier, controlled from
+the spaTouch panel's music screen) get an `audio` node, once the bridge has
+heard from the amplifier:
+
+ * power, source (`bluetooth` or `line`), volume, mute, repeat (`off`, `one`
+   or `all`) and shuffle can all be set
+ * playback (`playing`, `paused` or `stopped`) can be set to `playing` or
+   `paused`, and `command` takes `play`, `pause`, `next` and `previous`
+ * position and duration of the song in seconds, title, artist and album
+   (while a phone is connected), the amplifier's Bluetooth name and whether a
+   phone is connected
+
+The amplifier only reports changes, so the bridge asks it for its state after
+starting; everything is filled in within about 15 seconds.
+
 ## OpenHAB
 If you're going to integrate with OpenHAB, you'll need to install the
 `MQTT Binding` in `Add-ons`. Then go to Inbox, click `+`, select `MQTT Binding`

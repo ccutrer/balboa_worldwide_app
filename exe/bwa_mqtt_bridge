@@ -127,9 +127,143 @@ class MQTTBridge
           @homie["spa"]["aux#{i + 1}"].value = @bwa.lights[i]
         end
 
+        # The status comes every second: a good pace to catch up on the music
+        # system, and to notice that a song stopped moving.
+        @bwa.audio.refresh
+        update_audio
+
         # Tell systemd we are still alive and kicking. Ignored if systemd not in use.
         SdNotify.watchdog
+      when *AUDIO_MESSAGES
+        update_audio
       end
+    end
+  end
+
+  AUDIO_MESSAGES = [BWA::Messages::Audio::Bluetooth,
+                    BWA::Messages::Audio::Command,
+                    BWA::Messages::Audio::Playback,
+                    BWA::Messages::Audio::Power,
+                    BWA::Messages::Audio::Text,
+                    BWA::Messages::Audio::Volume].freeze
+  private_constant :AUDIO_MESSAGES
+
+  # The music node shows up once an amplifier has been heard, so spas
+  # without one get none.
+  def update_audio
+    audio = @bwa.audio
+    return unless audio.heard?
+    return publish_audio_node unless @homie["audio"]
+
+    node = @homie["audio"]
+    volume_format = "0:#{audio.max_volume || DEFAULT_MAX_VOLUME}"
+    if node["volume"].format != volume_format
+      node["volume"].format = volume_format
+      # Home Assistant only learns the new maximum when told again
+      node["volume"].hass_number(icon: "mdi:volume-high")
+    end
+    node.batch_update(
+      "power" => audio.on?,
+      "source" => audio.source,
+      "playback" => audio.playback,
+      "position" => audio.position,
+      "duration" => audio.duration,
+      "volume" => audio.volume,
+      "mute" => audio.muted?,
+      "repeat" => audio.repeat,
+      "shuffle" => audio.shuffle?,
+      "title" => audio.title,
+      "artist" => audio.artist,
+      "album" => audio.album,
+      "bluetooth-name" => audio.bluetooth_name,
+      "device-connected" => audio.device_connected?
+    )
+  end
+
+  DEFAULT_MAX_VOLUME = 21
+  private_constant :DEFAULT_MAX_VOLUME
+
+  def publish_audio_node
+    audio = @bwa.audio
+    @homie.node("audio", "Music", "Audio") do |node|
+      node.property("power", "Power", :boolean, audio.on?, hass: { switch: { icon: "mdi:music" } }) do |value|
+        @bwa.audio.power = value
+      end
+      node.property("source",
+                    "Source",
+                    :enum,
+                    audio.source,
+                    format: %w[bluetooth line],
+                    hass: { select: { icon: "mdi:speaker-bluetooth" } }) do |value|
+        @bwa.audio.source = value.to_sym
+      end
+      node.property("playback",
+                    "Playback",
+                    :enum,
+                    audio.playback,
+                    format: %w[playing paused stopped],
+                    hass: { select: { icon: "mdi:play-pause" } }) do |value|
+        (value == "playing") ? @bwa.audio.play : @bwa.audio.pause
+      end
+      command = node.property("command",
+                              "Command",
+                              :enum,
+                              format: %w[play pause next previous],
+                              retained: false) do |value|
+        case value
+        when "play" then @bwa.audio.play
+        when "pause" then @bwa.audio.pause
+        when "next" then @bwa.audio.next
+        when "previous" then @bwa.audio.previous
+        end
+      end
+      command.hass_button(name: "Next Song", object_id: "audio_next", payload_press: "next", icon: "mdi:skip-next")
+      command.hass_button(name: "Previous Song",
+                          object_id: "audio_previous",
+                          payload_press: "previous",
+                          icon: "mdi:skip-previous")
+      # Changes every second while playing, so no Home Assistant entities
+      node.property("position", "Position", :integer, audio.position, unit: "s")
+      node.property("duration", "Duration", :integer, audio.duration, unit: "s")
+      node.property("volume",
+                    "Volume",
+                    :integer,
+                    audio.volume,
+                    format: 0..(audio.max_volume || DEFAULT_MAX_VOLUME),
+                    hass: { number: { icon: "mdi:volume-high" } }) do |value|
+        @bwa.audio.volume = value
+      end
+      node.property("mute", "Mute", :boolean, audio.muted?, hass: { switch: { icon: "mdi:volume-off" } }) do |value|
+        @bwa.audio.muted = value
+      end
+      node.property("repeat",
+                    "Repeat",
+                    :enum,
+                    audio.repeat,
+                    format: %w[off one all],
+                    hass: { select: { icon: "mdi:repeat" } }) do |value|
+        @bwa.audio.repeat = value.to_sym
+      end
+      node.property("shuffle",
+                    "Shuffle",
+                    :boolean,
+                    audio.shuffle?,
+                    hass: { switch: { icon: "mdi:shuffle" } }) do |value|
+        @bwa.audio.shuffle = value
+      end
+      node.property("title", "Title", :string, audio.title, hass: { sensor: { icon: "mdi:music-note" } })
+      node.property("artist", "Artist", :string, audio.artist, hass: { sensor: { icon: "mdi:account-music" } })
+      node.property("album", "Album", :string, audio.album, hass: { sensor: { icon: "mdi:album" } })
+      node.property("bluetooth-name",
+                    "Bluetooth Name",
+                    :string,
+                    audio.bluetooth_name,
+                    hass: { sensor: { icon: "mdi:bluetooth", entity_category: :diagnostic } })
+      node.property("device-connected",
+                    "Device Connected",
+                    :boolean,
+                    audio.device_connected?,
+                    hass: { binary_sensor: { device_class: :connectivity } })
     end
   end
 
