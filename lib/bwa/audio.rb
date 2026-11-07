@@ -104,10 +104,6 @@ module BWA
       send_command(:request, index) if index
     end
 
-    def send_command(command, argument = 0)
-      @client.send_message(Messages::Audio::Command.new(command, argument))
-    end
-
     def power=(desired)
       send_command(:power, desired ? 1 : 0)
     end
@@ -159,6 +155,10 @@ module BWA
     end
 
     private
+
+    def send_command(command, argument = 0)
+      @client.send_message(Messages::Audio::Command.new(command, argument))
+    end
 
     # The index of the next :request to send, or nil for none now.
     def next_request(now)

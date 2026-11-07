@@ -157,7 +157,11 @@ class MQTTBridge
 
     node = @homie["audio"]
     volume_format = "0:#{audio.max_volume || DEFAULT_MAX_VOLUME}"
-    node["volume"].format = volume_format if node["volume"].format != volume_format
+    if node["volume"].format != volume_format
+      node["volume"].format = volume_format
+      # Home Assistant only learns the new maximum when told again
+      node["volume"].hass_number(icon: "mdi:volume-high")
+    end
     node.batch_update(
       "power" => audio.on?,
       "source" => audio.source,
@@ -206,7 +210,12 @@ class MQTTBridge
                               :enum,
                               format: %w[play pause next previous],
                               retained: false) do |value|
-        @bwa.audio.public_send(value)
+        case value
+        when "play" then @bwa.audio.play
+        when "pause" then @bwa.audio.pause
+        when "next" then @bwa.audio.next
+        when "previous" then @bwa.audio.previous
+        end
       end
       command.hass_button(name: "Next Song", object_id: "audio_next", payload_press: "next", icon: "mdi:skip-next")
       command.hass_button(name: "Previous Song",
