@@ -232,7 +232,7 @@ HH MM
 Message type 0a bf 92
 
 ```
- 0  1 ...                             35 36 ....
+ 0  1 ...                             34 35 ....
 CT SL <32 bytes of SSID; null padded> ET PL <64 bytes of the passkey; null padded>
 ```
 
@@ -245,6 +245,14 @@ CT SL <32 bytes of SSID; null padded> ET PL <64 bytes of the passkey; null padde
    * 0x08 - WPA
  * SL - SSID length
  * PL - passkey length
+
+The SSID field is exactly 32 bytes, so the payload is 100 bytes (message length byte 0x69).
+A message laid out with a 33-byte SSID field is silently ignored.
+
+The Wi-Fi module accepts this message while it is joined to a home network (TCP 4257), not only
+in direct (AP) mode: it disconnects and joins the new network within about 15 seconds, without a
+power cycle. Verified on a 50350 (BP7, controller M100_221 V65.0) with ET 0x08 against a WPA2-PSK
+network.
 
 ### Settings Request
 
